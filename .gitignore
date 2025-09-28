@@ -1,4 +1,7 @@
 *.o
 *.swp
+*.so
+*.egg-info
 test_driver
 test_file.ppef
+build

@@ -421,7 +421,7 @@ PEF::PEF(const std::string& path) {
 
     // Total file size (bytes)
     auto sz = in.tellg();
-    if (sz <= sizeof(PEFMetadata)) {
+    if (static_cast<size_t>(sz) <= sizeof(PEFMetadata)) {
         file_error("load", path, "empty file");
     }
 
