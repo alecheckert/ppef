@@ -84,25 +84,6 @@ struct BitWriter {
 };
 
 
-/*
- * Struct: FileHeader
- * ------------------
- * Metadata relevant for a PPEF-compressed file. We write this once in
- * the first 40 bytes of the file.
-*/
-#pragma pack(push, 1)
-struct FileHeader {
-    char     magic[4];       // file magic; we use "PEF1"
-    uint32_t version;        // 1
-    uint64_t n_elem;         // total number of compressed elements
-    uint32_t block_size;     // compression block size (in # elements)
-    uint32_t reserved;       // always 0
-    uint64_t n_blocks;       // ceil(n_elem / block_size)
-    uint64_t payload_offset; // byte offset of actual data part of file
-};
-#pragma pack(pop)
-// Desirable for byte-level alignment.
-static_assert(sizeof(FileHeader) == 40, "FileHeader must be 40 bytes");
 
 /*
  * Struct: EFBlockMetadata
@@ -154,6 +135,85 @@ struct EFBlock {
     std::vector<uint64_t> decode() const;
 };
 
+/*
+ * Struct: PEFMetadata
+ * -------------------
+ * Metadata relevant for a PPEF-compressed file. We write this once in
+ * the first 40 bytes of the file.
+*/
+#pragma pack(push, 1)
+struct PEFMetadata {
+    char     magic[4];       // file magic ("PPEF")
+    uint32_t version;        // 1
+    uint64_t n_elem;         // total number of compressed elements
+    uint32_t block_size;     // compression block size (in # elements)
+    uint32_t reserved;       // always 0
+    uint64_t n_blocks;       // ceil(n_elem / block_size)
+    uint64_t payload_offset; // byte offset of actual data part of file
+};
+#pragma pack(pop)
+// Desirable for byte-level alignment.
+static_assert(sizeof(PEFMetadata) == 40, "PEFMetadata must be 40 bytes");
 
+
+/*
+ * Class: PEF
+ * ----------
+ * A nondecreasing sequence of integers in partitioned Elias-Fano (PEF)
+ * format. Provides methods to serialize the sequence to a file.
+*/
+class PEF {
+public:
+    // Construct from a raw sequence of nondecreasing integers.
+    explicit PEF(
+        const std::vector<uint64_t>& values, // must be sorted!
+        uint32_t block_size = 256
+    );
+
+    // Construct from a compressed PPEF file.
+    explicit PEF(const std::string& filepath);
+
+    // Save contents to a file with magic "PPEF". Throws runtime_error
+    // if we can't save.
+    void save(const std::string& path) const;
+
+    // Decode the i^th EFBlock, returning its original integers.
+    std::vector<uint64_t> decode_block(uint64_t i) const;
+
+    // Decode the entire *PEF* object, returning the whole original sequence.
+    std::vector<uint64_t> decode() const;
+
+    // Number of integers encoded in this PEF.
+    uint64_t n_elem() const;
+
+    // Maximum number of integers per EFBlock.
+    uint32_t block_size() const;
+
+    // Total number of EFBlocks.
+    uint64_t n_blocks() const;
+
+    // Print all PEFMetadata to stdout.
+    void show_meta() const;
+
+    // Get a copy of the PEFMetadata.
+    PEFMetadata get_meta() const;
+
+private:
+    PEFMetadata meta {};
+    // Highest element in each block (size *n_blocks_*).
+    std::vector<uint64_t> block_last_;
+    // Byte offset of the start of each block in the file (size *n_blocks_*).
+    std::vector<uint64_t> block_offs_;
+    // All EFBlocks written end-to-end:
+    // header0, low0, high0, header1, low1, high1, ...
+    std::vector<uint8_t> payload_;
+
+    // Write a new chunk of data to *payload_*.
+    void append_bytes(const void* src, size_t n) {
+        size_t old = payload_.size();
+        payload_.resize(old + n);
+        std::memcpy(payload_.data() + old, src, n);
+    }
+};
 
 } // end namespace ppef

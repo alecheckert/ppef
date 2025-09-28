@@ -131,6 +131,123 @@ void test_efblock_size_one() {
     }
 }
 
+void test_pef_construct_from_sequence() {
+    const size_t n = 1<<10;
+    const uint64_t max_value = 1<<12;
+    const uint32_t block_size = 1<<8;
+
+    const std::vector<uint64_t> values = random_sorted_integers(n, max_value);
+    assert(std::is_sorted(values.begin(), values.end()));
+    assert(values.size() == n);
+
+    // compress
+    PEF pef(values, block_size);
+    assert(pef.n_elem() == static_cast<uint64_t>(values.size()));
+    assert(pef.block_size() == block_size);
+    assert(pef.n_blocks() == 4ULL); // 4 blocks of 256 elements to cover n=1024
+
+    // test PEF::decode_block
+    std::vector<uint64_t> recon = pef.decode_block(0);
+    assert(recon.size() == 256);
+    for (size_t i = 0; i < 256; ++i) {
+        assert(recon.at(i) == values.at(i));
+    }
+
+    // second block
+    recon = pef.decode_block(1);
+    assert(recon.size() == 256);
+    for (size_t i = 0; i < 256; ++i) {
+        assert(recon.at(i) == values.at(i + 256));
+    }
+
+    // test PEF::decode, which should decode the whole sequence
+    recon = pef.decode();
+    assert(recon.size() == values.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        assert(recon.at(i) == values.at(i));
+    }
+}
+
+void test_pef_construct_from_sequence_ragged() {
+    const size_t n = 1333;
+    const uint64_t max_value = 1<<12;
+    const uint32_t block_size = 1<<8;
+
+    const std::vector<uint64_t> values = random_sorted_integers(n, max_value);
+    assert(std::is_sorted(values.begin(), values.end()));
+    assert(values.size() == n);
+
+    // compress
+    PEF pef(values, block_size);
+    assert(pef.n_elem() == static_cast<uint64_t>(values.size()));
+    assert(pef.block_size() == block_size);
+    assert(pef.n_blocks() == 6ULL); // blocks of 256 elements to cover n=1333
+
+    // test PEF::decode, which should decode the whole sequence
+    std::vector<uint64_t> recon = pef.decode();
+    assert(recon.size() == values.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        assert(recon.at(i) == values.at(i));
+    }
+}
+
+void test_pef_construct_from_sequence_empty() {
+    const size_t n = 0;
+    const uint32_t block_size = 1<<8;
+    const std::vector<uint64_t> values;
+    assert(std::is_sorted(values.begin(), values.end()));
+    assert(values.size() == n);
+
+    // compress
+    PEF pef(values, block_size);
+    assert(pef.n_elem() == static_cast<uint64_t>(values.size()));
+    assert(pef.block_size() == block_size);
+
+    // test PEF::decode, which should decode the whole sequence
+    std::vector<uint64_t> recon = pef.decode();
+    assert(recon.size() == values.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        assert(recon.at(i) == values.at(i));
+    }
+}
+
+void test_pef_construct_from_file() {
+    const size_t n = 1333;
+    const uint64_t max_value = 1<<12;
+    const uint32_t block_size = 1<<8;
+
+    const std::vector<uint64_t> values = random_sorted_integers(n, max_value);
+    assert(std::is_sorted(values.begin(), values.end()));
+    assert(values.size() == n);
+
+    const std::string filepath("_test_file.ppef");
+    PEF pef(values, block_size);
+    pef.save(filepath);
+
+    PEF pef2(filepath);
+
+    // Check that metadata is identical
+    const PEFMetadata meta = pef.get_meta();
+    const PEFMetadata meta2 = pef2.get_meta();
+    assert (meta2.magic[0] == meta.magic[0]);
+    assert (meta2.magic[1] == meta.magic[1]);
+    assert (meta2.magic[2] == meta.magic[2]);
+    assert (meta2.magic[3] == meta.magic[3]);
+    assert (meta2.version == meta.version);
+    assert (meta2.block_size == meta.block_size);
+    assert (meta2.reserved == meta.reserved);
+    assert (meta2.n_elem == meta.n_elem);
+    assert (meta2.n_blocks == meta.n_blocks);
+    assert (meta2.payload_offset == meta.payload_offset);
+
+    // Check that values survived the roundtrip
+    const std::vector<uint64_t> recon = pef2.decode();
+    assert (recon.size() == values.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        assert (recon.at(i) == values.at(i));
+    }
+}
+
 void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
@@ -146,6 +263,18 @@ void test_driver() {
 
     std::cout << "test_efblock_size_one\n";
     test_efblock_size_one();
+
+    std::cout << "test_pef_construct_from_sequence\n";
+    test_pef_construct_from_sequence();
+
+    std::cout << "test_pef_construct_from_sequence_ragged\n";
+    test_pef_construct_from_sequence_ragged();
+
+    std::cout << "test_pef_construct_from_sequence_empty\n";
+    test_pef_construct_from_sequence_empty();
+
+    std::cout << "test_pef_construct_from_file\n";
+    test_pef_construct_from_file();
 }
 
 int main() {

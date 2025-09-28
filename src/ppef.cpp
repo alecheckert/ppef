@@ -2,6 +2,20 @@
 
 namespace ppef {
 
+// Show a number in binary.
+std::string to_binary(uint64_t x) {
+    std::string o;
+    for (size_t i = 0; i < 64ULL; ++i) {
+        if (x % 2 == 1) {
+            o.push_back('1');
+        } else {
+            o.push_back('0');
+        }
+        x >>= 1;
+    }
+    return o;
+}
+
 inline uint32_t floor_log2_u64(uint64_t x) {
     // 63u: unsigned integer literal with value 63.
     // __builtin_clzll: GCC builtin that counts the number of leading
@@ -262,6 +276,284 @@ std::vector<uint64_t> EFBlock::decode() const {
         out[i] = meta.floor + ((hi << meta.l) | lo);
     }
     return out;
+}
+
+void EFBlock::show() const {
+    std::cout << "Header:\n";
+    std::cout << "  n_elem:        " << meta.n_elem << std::endl;
+    std::cout << "  l:             " << meta.l << std::endl;
+    std::cout << "  pad[0]:        " << meta.pad[0] << std::endl;
+    std::cout << "  pad[1]:        " << meta.pad[1] << std::endl;
+    std::cout << "  pad[2]:        " << meta.pad[2] << std::endl;
+    std::cout << "  floor:         " << meta.floor << std::endl;
+    std::cout << "  low_words:     " << meta.low_words << std::endl;
+    std::cout << "  high_words:    " << meta.high_words << std::endl;
+    std::cout << "  high_bits_len: " << meta.high_bits_len << std::endl;
+    std::cout << "  low.size():    " << low.size() << std::endl;
+    std::cout << "  high.size():   " << high.size() << std::endl;
+    std::cout << "Compressed low representation:\n";
+    for(size_t i = 0; i < low.size(); ++i) {
+        std::cout << i << "\t" << std::setw(32) << low.at(i) << "\t" << to_binary(low.at(i)) << std::endl;
+    }
+    std::cout << "Compressed high representation:\n";
+    for(size_t i = 0; i < high.size(); ++i) {
+        std::cout << i << "\t" << std::setw(32) << high.at(i) << "\t" << to_binary(high.at(i)) << std::endl;
+    }
+    const double compression_ratio = static_cast<double>(meta.n_elem) / (low.size() + high.size());
+    std::cout << "Overall compression ratio: " << compression_ratio << std::endl;
+}
+
+PEF::PEF(
+    const std::vector<uint64_t>& values,
+    uint32_t block_size
+) {
+    if (!std::is_sorted(values.begin(), values.end())) {
+        throw std::runtime_error(
+            "input sequence must be nondecreasing"
+        );
+    }
+    const uint64_t n_elem = static_cast<uint64_t>(values.size()),
+                   n_blocks = (uint64_t)ceil_div_u64(n_elem, block_size);
+    block_last_.resize(n_blocks);
+    block_offs_.resize(n_blocks);
+    payload_.clear();
+
+    // Current byte offset into the block. We require that all blocks
+    // have 8-byte alignment here for performance resaons, so there can
+    // be unused space in each EFBlock.
+    size_t cursor = 0; // payload size so far (bytes)
+
+    for (uint64_t bi = 0; bi < n_blocks; ++bi) {
+        // Start of this block.
+        const uint64_t begin = bi * block_size;
+        // End of this block; could be less than *block_size* if we're at
+        // the end of the sequence.
+        const uint64_t end = std::min(n_elem, begin + block_size);
+        // Number of elements in the block (n <= block_size).
+        const uint32_t n = (uint32_t)(end - begin);
+        // Pointer to the first element in the block.
+        const uint64_t* p = values.data() + begin;
+        // Record the byte offset of this block in the file.
+        block_offs_[bi] = cursor;
+        // Record the value of the highest element in this block.
+        block_last_[bi] = p[n - 1];
+        // Compress this block.
+        EFBlock blk(p, n);
+        // Write the BlockHeader.
+        append_bytes(&blk.meta, sizeof(blk.meta));
+        cursor += sizeof(blk.meta);
+        // Write the low bit representation (u64)
+        if (!blk.low.empty()) {
+            append_bytes(blk.low.data(), blk.low.size() * sizeof(uint64_t));
+            cursor += blk.low.size() * sizeof(uint64_t);
+        }
+        // Write the high bit representation (u64)
+        if (!blk.high.empty()) {
+            append_bytes(blk.high.data(), blk.high.size() * sizeof(uint64_t));
+            cursor += blk.high.size() * sizeof(uint64_t);
+        }
+    }
+
+    // Configure PEFMetadata
+    meta.magic[0] = 'P';
+    meta.magic[1] = 'P';
+    meta.magic[2] = 'E';
+    meta.magic[3] = 'F';
+    meta.version = 1;
+    meta.block_size = block_size;
+    meta.reserved = 0;
+    meta.n_elem = n_elem;
+    meta.n_blocks = n_blocks;
+    meta.payload_offset = sizeof(PEFMetadata) + n_blocks * sizeof(uint64_t) * 2;
+}
+
+void file_error(
+    const std::string& operation,
+    const std::string& path,
+    const std::string& reason
+) {
+    std::ostringstream o;
+    o << "failed to " << operation << " to " << path
+      << " due to " << reason << std::endl;
+    throw std::runtime_error(o.str());
+}
+
+void PEF::save(const std::string& path) const {
+    std::ofstream out(path, std::ios::binary);
+    if (!out) {
+        file_error("save", path, "failure to open file");
+    }
+    out.write(
+        reinterpret_cast<const char*>(&meta),
+        sizeof(meta)
+    );
+    if (!out) {
+        file_error("save", path, "failure to write header");
+    }
+    out.write(
+        reinterpret_cast<const char*>(block_last_.data()),
+        static_cast<std::streamsize>(block_last_.size() * sizeof(uint64_t))
+    );
+    if (!out) {
+        file_error("save", path, "failure to save block_last_");
+    }
+    out.write(
+        reinterpret_cast<const char*>(block_offs_.data()),
+        static_cast<std::streamsize>(block_offs_.size() * sizeof(uint64_t))
+    );
+    if (!out) {
+        file_error("save", path, "failure to save block_offs_");
+    }
+    out.write(
+        reinterpret_cast<const char*>(payload_.data()),
+        static_cast<std::streamsize>(payload_.size())
+    );
+    if (!out) {
+        file_error("save", path, "failure to save payload_");
+    }
+}
+
+PEF::PEF(const std::string& path) {
+    std::ifstream in(path, std::ios::binary | std::ios::ate);
+    if (!in) {
+        file_error("load", path, "failure to open file");
+    }
+
+    // Total file size (bytes)
+    auto sz = in.tellg();
+    if (sz <= sizeof(PEFMetadata)) {
+        file_error("load", path, "empty file");
+    }
+
+    // Read the metadata
+    in.seekg(0);
+    in.read(reinterpret_cast<char*>(&meta), sizeof(meta));
+    if (!in) {
+        file_error("load", path, "failure to read header");
+    }
+
+    // Check that it's a PPEF filetype and has version 1
+    if (std::strncmp(meta.magic, "PPEF", 4) != 0 || meta.version != 1) {
+        file_error("load", path, "invalid magic and/or version");
+    }
+
+    // Read the array of byte offsets for each EFBlock in the file
+    block_last_.resize(meta.n_blocks);
+    in.read(
+        reinterpret_cast<char*>(block_last_.data()),
+        meta.n_blocks * sizeof(uint64_t)
+    );
+    if (!in) {
+        file_error("load", path, "failure to read block_last_ array");
+    }
+
+    // Read the array of highest values for each EFBlock in the file
+    block_offs_.resize(meta.n_blocks);
+    in.read(
+        reinterpret_cast<char*>(block_offs_.data()),
+        meta.n_blocks * sizeof(uint64_t)
+    );
+    if (!in) {
+        file_error("load", path, "failure to read block_offs_ array");
+    }
+
+    // Read all of the EFBlocks into memory (TODO: replace with mmap)
+    const size_t size_so_far = sizeof(PEFMetadata)
+        + meta.n_blocks * sizeof(uint64_t) * 2;
+    const size_t bytes_to_read = static_cast<size_t>(sz) - size_so_far;
+    payload_.resize(bytes_to_read);
+    in.read(
+        reinterpret_cast<char*>(payload_.data()),
+        bytes_to_read
+    );
+    if (!in) {
+        file_error("load", path, "failure to read payload_ array");
+    }
+}
+
+std::vector<uint64_t> PEF::decode_block(uint64_t bi) const {
+    // Check for out-of-bounds
+    if (bi >= meta.n_blocks) {
+        std::ostringstream msg;
+        msg << "invalid block index " << bi << "; total blocks = " << meta.n_blocks;
+        throw std::runtime_error(msg.str());
+    }
+    // Pointer to the start of this block in the raw file.
+    const uint8_t* base = payload_.data() + block_offs_.at(bi);
+    // Read the EFBlock header.
+    EFBlockMetadata block_meta {};
+    std::memcpy(&block_meta, base, sizeof(block_meta));
+
+    // Pointer to the start of the low bit representation.
+    const uint64_t* loww = reinterpret_cast<const uint64_t*>(
+        base + sizeof(block_meta)
+    );
+    // Pointer to the start of the high bit representation.
+    const uint64_t* highw = loww + block_meta.low_words;
+    // Allocate enough space for all elements in this block.
+    std::vector<uint64_t> o(block_meta.n_elem);
+    // The low bits are written densely, so we can read them by simply striding
+    // across the byte array.
+    BitReader br(loww, (size_t)block_meta.low_words);
+    // Bit position of the previous element in the high bits.
+    // Set to UINT64_MAX for element 0, so we know
+    uint64_t prev_hi_pos = UINT64_MAX;
+    for (uint32_t i = 0; i < block_meta.n_elem; ++i) {
+        // Start looking for the next set bit, after the previous element's set bit.
+        uint64_t start = (prev_hi_pos == UINT64_MAX) ? 0ULL : (prev_hi_pos + 1ULL);
+        // Find the next set bit in *highw*. This is the bit position relative to
+        // the start of *highw*.
+        uint64_t pos = next_one_at_or_after(highw, (size_t)block_meta.high_words, start);
+        prev_hi_pos = pos;
+        // Since pos = (# of previous elements) + (value of current element-floor),
+        // this is the value of the current element (minus the floor).
+        uint64_t hi = pos - i;
+        // Number of bits per element in the low bit representation.
+        uint64_t lo = (block_meta.l ? br.get(block_meta.l) : 0ULL);
+        // Combine the low bits and high bits to get the original element's
+        // difference from the floor, and then add back the floor.
+        o[i] = block_meta.floor + ((hi << block_meta.l) | lo);
+    }
+    return o;
+}
+
+PEFMetadata PEF::get_meta() const {
+    PEFMetadata o = meta;
+    return o;
+}
+
+void PEF::show_meta() const {
+    std::cout << "magic[0] = " << meta.magic[0] << "\n";
+    std::cout << "magic[1] = " << meta.magic[1] << "\n";
+    std::cout << "magic[2] = " << meta.magic[2] << "\n";
+    std::cout << "magic[3] = " << meta.magic[3] << "\n";
+    std::cout << "version = " << meta.version << "\n";
+    std::cout << "n_elem = " << meta.n_elem << "\n";
+    std::cout << "block_size = " << meta.block_size << "\n";
+    std::cout << "reserved = " << meta.reserved << "\n";
+    std::cout << "n_blocks = " << meta.n_blocks << "\n";
+    std::cout << "payload_offset = " << meta.payload_offset << "\n";
+}
+
+std::vector<uint64_t> PEF::decode() const {
+    std::vector<uint64_t> o;
+    for (uint64_t bi = 0; bi < meta.n_blocks; ++bi) {
+        std::vector<uint64_t> block = decode_block(bi);
+        o.insert(o.end(), block.begin(), block.end());
+    }
+    return o;
+}
+
+uint64_t PEF::n_elem() const {
+    return meta.n_elem;
+}
+
+uint32_t PEF::block_size() const {
+    return meta.block_size;
+}
+
+uint64_t PEF::n_blocks() const {
+    return meta.n_blocks;
 }
 
 } // end namespace ppef
