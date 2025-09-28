@@ -83,8 +83,6 @@ struct BitWriter {
     void flush();
 };
 
-
-
 /*
  * Struct: EFBlockMetadata
  * -----------------------
