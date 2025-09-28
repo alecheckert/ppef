@@ -1,0 +1,17 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "pybind11>=2.6.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ppef"
+version = "0.0.0"
+description = "Partitioned Elias-Fano encoding for sequences of nondecreasing integers"
+authors = [
+    { name = "Alec Heckert", email = "alecheckert@gmail.com" },
+]
+dependencies = [
+    "numpy",
+]
