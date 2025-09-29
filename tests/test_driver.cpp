@@ -1,6 +1,8 @@
+#include <filesystem>
 #include <iostream>
 #include <random>
 #include <cassert>
+#include <cstdio>
 #include "ppef.h"
 
 static std::random_device rd;
@@ -25,6 +27,18 @@ std::vector<uint64_t> random_sorted_integers(
     std::sort(o.begin(), o.end());
     return o;
 }
+
+// Deleted at end of scope.
+struct NamedTemporaryFile {
+    const std::string path;
+
+    NamedTemporaryFile(const std::string& path): path(path) {}
+    ~NamedTemporaryFile() {
+        if (std::filesystem::exists(path)) {
+            std::remove(path.c_str());
+        }
+    }
+};
 
 // Test that a bitstream written by BitWriter can be parsed
 // by BitReader.
@@ -264,11 +278,11 @@ void test_pef_construct_from_file() {
     assert(std::is_sorted(values.begin(), values.end()));
     assert(values.size() == n);
 
-    const std::string filepath("_test_file.ppef");
+    NamedTemporaryFile file("_test_file.ppef");
     Sequence pef(values, block_size);
-    pef.save(filepath);
+    pef.save(file.path);
 
-    Sequence pef2(filepath);
+    Sequence pef2(file.path);
 
     // Check that metadata is identical
     const SequenceMetadata meta = pef.get_meta();
