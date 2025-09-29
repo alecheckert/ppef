@@ -13,6 +13,7 @@
 #include <vector>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 
 namespace ppef {
 
