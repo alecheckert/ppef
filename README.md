@@ -11,7 +11,8 @@ Notes:
 ## Python example
 
 ```
-from _ppef import Sequence, deserialize
+import numpy as np
+from ppef import Sequence, deserialize
 
 # Simulate a bunch of random integers
 values = np.random.randint(0, 1<<16, size=(1<<22))
@@ -33,7 +34,7 @@ chunk: list[int] = seq.decode_block(50)
 seq.save("myfile.ppef")
 
 # Deserialize from a file
-seq2 = _Sequence("myfile.ppef")
+seq2 = Sequence("myfile.ppef")
 
 # Serialize to a bytestring
 serialized: bytes = seq.serialize()

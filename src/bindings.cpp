@@ -10,7 +10,7 @@ ppef::Sequence deserialize(const std::string& s) {
     return ppef::Sequence(in);
 }
 
-PYBIND11_MODULE(_ppef, m) {
+PYBIND11_MODULE(ppef, m) {
     py::class_<ppef::SequenceMetadata>(m, "SequenceMetadata", py::module_local());
     py::class_<ppef::Sequence>(m, "Sequence", py::module_local())
         .def(
@@ -44,6 +44,7 @@ PYBIND11_MODULE(_ppef, m) {
         .def("save", &ppef::Sequence::save, py::arg("filepath"))
         .def("decode_block", &ppef::Sequence::decode_block, py::arg("block_idx"))
         .def("decode", &ppef::Sequence::decode)
+        .def("get", &ppef::Sequence::get, py::arg("i"))
         .def(
             "serialize",
             [](const ppef::Sequence& s) {

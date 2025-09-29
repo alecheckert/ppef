@@ -566,16 +566,17 @@ SequenceMetadata Sequence::get_meta() const {
 }
 
 void Sequence::show_meta() const {
-    std::cout << "magic[0] = " << meta.magic[0] << "\n";
-    std::cout << "magic[1] = " << meta.magic[1] << "\n";
-    std::cout << "magic[2] = " << meta.magic[2] << "\n";
-    std::cout << "magic[3] = " << meta.magic[3] << "\n";
     std::cout << "version = " << meta.version << "\n";
     std::cout << "n_elem = " << meta.n_elem << "\n";
     std::cout << "block_size = " << meta.block_size << "\n";
-    std::cout << "reserved = " << meta.reserved << "\n";
     std::cout << "n_blocks = " << meta.n_blocks << "\n";
     std::cout << "payload_offset = " << meta.payload_offset << "\n";
+
+    // Compute compression ratio
+    const float compression_ratio = 1.f
+        - static_cast<float>(40 + 2*8*meta.n_blocks + payload_.size())
+        / (meta.n_elem * 8);
+    std::cout << "compression factor = " << compression_ratio << std::endl;
 }
 
 std::vector<uint64_t> Sequence::decode() const {

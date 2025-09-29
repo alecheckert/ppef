@@ -18,7 +18,7 @@ sys.stderr.write(
 
 ext_modules = [
     Pybind11Extension(
-        "_ppef",
+        "ppef",
         SRC_FILES,
         include_dirs=INCLUDE_DIRS,
         cxx_std=17,
