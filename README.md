@@ -1,11 +1,12 @@
-# ppef: Partitioned Elias-Fano encoding in C++
+# ppef: Partitioned Elias-Fano encoding
 
-Compact C++/Python implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615).
+Compact C++ implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615):
 
-Some notes on this implementation
- - No external C/C++ dependencies
+Notes:
+ - Python bindings
  - Pickleable
- - Set-like operations - like intersections, unions, etc. - can be performed on the compressed representation (without decompression). Still working on these algorithms.
+ - No external C/C++ dependencies
+ - Set-like operations - like intersections, unions, etc. - can be performed on the compressed representation (without decompression). Still working on these algorithms; stay tuned.
 
 ## Python example
 
@@ -46,7 +47,7 @@ val: int = seq.get(5167)
 
 ## Building, testing
 
-To compile the Python package:
+Compile the Python package:
 ```
 pip install .
 ```
