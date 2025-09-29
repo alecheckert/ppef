@@ -22,7 +22,7 @@ values.sort()
 seq = Sequence(values)
 
 # Show some info
-seq.show_meta()
+seq.info()
 
 # Decode
 values: list[int] = seq.decode()

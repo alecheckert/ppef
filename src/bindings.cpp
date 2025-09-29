@@ -40,7 +40,7 @@ PYBIND11_MODULE(ppef, m) {
         .def_property_readonly("block_size", &ppef::Sequence::block_size)
         .def_property_readonly("n_blocks", &ppef::Sequence::n_blocks)
         .def("get_meta", &ppef::Sequence::get_meta)
-        .def("show_meta", &ppef::Sequence::show_meta)
+        .def("info", &ppef::Sequence::info)
         .def("save", &ppef::Sequence::save, py::arg("filepath"))
         .def("decode_block", &ppef::Sequence::decode_block, py::arg("block_idx"))
         .def("decode", &ppef::Sequence::decode)

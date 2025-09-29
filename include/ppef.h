@@ -203,7 +203,7 @@ public:
     uint64_t n_blocks() const;
 
     // Print all SequenceMetadata to stdout.
-    void show_meta() const;
+    void info() const;
 
     // Get a copy of the SequenceMetadata.
     SequenceMetadata get_meta() const;

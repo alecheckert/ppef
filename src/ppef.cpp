@@ -565,7 +565,7 @@ SequenceMetadata Sequence::get_meta() const {
     return o;
 }
 
-void Sequence::show_meta() const {
+void Sequence::info() const {
     std::cout << "version = " << meta.version << "\n";
     std::cout << "n_elem = " << meta.n_elem << "\n";
     std::cout << "block_size = " << meta.block_size << "\n";
