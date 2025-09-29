@@ -18,6 +18,7 @@ jobs:
       - name: Build wheels
         run: cibuildwheel --output-dir wheelhouse
         env:
+          CIBW_BUILD: "cp310-manylinux_x86_64 cp310-macosx_x86_64 cp310-macosx_arm64"
           CIBW_TEST_COMMAND: 'pytest {project}/tests'
           CIBW_SKIP: 'pp* *-win32 *-manylinux_i686'
       - name: Upload wheels
