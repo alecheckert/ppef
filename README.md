@@ -7,11 +7,8 @@ Some notes on this implementation
  - Pickleable
  - Set-like operations - like intersections, unions, etc. - can be performed on the compressed representation (without decompression). Still working on these algorithms.
 
-## Python usage
+## Python example
 
-The Python API consists of a single class - a `Sequence` - that represents a nondecreasing sequence of integers.
-
-Example:
 ```
 from _ppef import Sequence, deserialize
 
