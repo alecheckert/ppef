@@ -74,6 +74,16 @@ BitReader::BitReader(const uint64_t* words, size_t n_words):
     cur(n_words ? words[0] : 0)
 {}
 
+// Scan to a particular bit position *pos*.
+void BitReader::scan(uint64_t pos) {
+    idx = pos >> 6;
+    if (idx >= n_words) {
+        throw std::runtime_error("BitReader::scan: out-of-bounds");
+    }
+    consumed = static_cast<unsigned>(pos & 63ULL);
+    cur = words[idx];
+}
+
 uint64_t BitReader::get(unsigned w) {
     if (w == 0) return 0;
     uint64_t res = 0;
@@ -517,6 +527,16 @@ std::vector<uint64_t> Sequence::decode_block(uint64_t bi) const {
     return o;
 }
 
+uint64_t Sequence::get(uint64_t i) const {
+    if (i >= meta.n_elem) {
+        throw std::runtime_error("Sequence::get: out-of-bounds");
+    }
+    const uint64_t block_idx = i / meta.block_size,
+                   block_pos = i % meta.block_size;
+    std::vector<uint64_t> values = decode_block(block_idx);
+    return values.at(block_pos);
+}
+
 SequenceMetadata Sequence::get_meta() const {
     SequenceMetadata o = meta;
     return o;
@@ -543,6 +563,26 @@ std::vector<uint64_t> Sequence::decode() const {
     }
     return o;
 }
+
+/*
+uint64_t Sequence::get(uint64_t i) const {
+    if (i >= meta.n_elem) {
+        throw std::runtime_error("Sequence::get: out of bounds index");
+    }
+    const uint64_t bi = i / meta.block_size,
+                   offset = i % meta.block_size;
+    // Pointer to the start of this block in the raw file.
+    const uint8_t* base = payload_.data() + block_offs_.at(bi);
+    // Read the EFBlock header.
+    EFBlockMetadata block_meta {};
+    std::memcpy(&block_meta, base, sizeof(block_meta));
+    // Pointer to the start of the low and high bits
+    const uint8_t *low_bits = base + sizeof(block_meta),
+                  *high_bits = base + sizeof(block_meta) + block_meta.low_words * 8;
+    offset * l 
+    base + sizeof(block_meta) + offset * l
+}
+*/
 
 uint64_t Sequence::n_elem() const {
     return meta.n_elem;

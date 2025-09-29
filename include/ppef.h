@@ -59,6 +59,9 @@ struct BitReader {
     // packed into the least-significant positions of uint64_t.
     // Doesn't make sense to use w > 64.
     uint64_t get(unsigned w);
+
+    // Scan to a particular bit position *pos*.
+    void scan(uint64_t pos);
 };
 
 /*
@@ -180,6 +183,9 @@ public:
 
     // Decode the entire original sequence.
     std::vector<uint64_t> decode() const;
+
+    // Decode the i^th value in the sequence.
+    uint64_t get(uint64_t i) const;
 
     // Number of integers encoded in this Sequence.
     uint64_t n_elem() const;

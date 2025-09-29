@@ -54,6 +54,33 @@ void test_bit_writer_and_reader() {
     }
 }
 
+void test_bit_reader_scan() {
+    // 100 integers from 0 to 127: can be represented in 7 bits
+    const size_t n = 100;
+    const uint64_t max_value = 1<<7;
+    const std::vector<uint64_t> seq = random_sorted_integers(n, max_value);
+    assert(std::is_sorted(seq.begin(), seq.end()));
+    assert(seq.size() == 100);
+
+    // Write these to a raw bitvector
+    BitWriter writer;
+    for (size_t i = 0; i < n; ++i) {
+        writer.put(seq.at(i), 7);
+    }
+    writer.flush();
+
+    // jump to the 50th element and start reading from there
+    BitReader reader(writer.words.data(), writer.words.size());
+    reader.scan(50 * 7);
+    std::vector<uint64_t> recon;
+    for (size_t i = 0; i < 50; ++i) {
+        // read 7 bits from the bitvector
+        uint64_t val = reader.get(7);
+        // check that it agrees with the input
+        assert (val == seq.at(i + 50));
+    }
+}
+
 // Edge case: reading from end of stream.
 void test_bit_reader_end_of_stream() {
     std::vector<uint64_t> words;
@@ -128,6 +155,23 @@ void test_efblock_size_one() {
     assert (recon.size() == values.size());
     for (size_t i = 0; i < values.size(); ++i) {
         assert (recon.at(i) == values.at(i));
+    }
+}
+
+void test_sequence_get() {
+    // 1024 integers from 0 to 4096: can be represented in 7 bits
+    const size_t n = 1<<10;
+    const uint64_t max_value = 1<<12;
+    const std::vector<uint64_t> values = random_sorted_integers(n, max_value);
+    assert(std::is_sorted(values.begin(), values.end()));
+    assert(values.size() == n);
+
+    // Encode
+    Sequence seq(values);
+
+    for (size_t i = 0; i < n; ++i) {
+        uint64_t val = seq.get(i);
+        assert (val == values.at(i));
     }
 }
 
@@ -252,6 +296,9 @@ void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
 
+    std::cout << "test_bit_reader_scan\n";
+    test_bit_reader_scan();
+
     std::cout << "test_bit_reader_end_of_stream\n";
     test_bit_reader_end_of_stream();
 
@@ -260,6 +307,9 @@ void test_driver() {
 
     std::cout << "test_efblock\n";
     test_efblock();
+
+    std::cout << "test_sequence_get\n";
+    test_sequence_get();
 
     std::cout << "test_efblock_size_one\n";
     test_efblock_size_one();
