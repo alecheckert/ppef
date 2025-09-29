@@ -9,13 +9,6 @@ SRC_FILES = list(glob(os.path.join("src", "*.cpp")))
 INCLUDE_DIRS = ["include"]
 CXX_STD = 17
 
-sys.stderr.write(
-    "\nPPEF BUILD CONFIGURATION:\n"
-    f"{SRC_FILES=}\n"
-    f"{INCLUDE_DIRS=}\n"
-    f"{CXX_STD=}\n"
-)
-
 ext_modules = [
     Pybind11Extension(
         "ppef",
