@@ -62,9 +62,8 @@ def test_pickling():
 
 def test_empty():
     """Stability test."""
-    seq = ppef.Sequence([1])
-    assert seq.n_elem == 1
+    seq = ppef.Sequence([])
+    assert seq.n_elem == 0
     serialized = seq.serialize()
     seq2 = ppef.deserialize(serialized)
-    assert seq2.n_elem == 1
-    assert seq.get(0) == 1
+    assert seq2.n_elem == 0

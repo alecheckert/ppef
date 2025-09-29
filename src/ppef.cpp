@@ -444,11 +444,11 @@ void Sequence::init_from_stream(std::istream& in) {
     // Total file size (bytes)
     in.seekg(0, std::ios::end);
     auto sz = in.tellg();
-    if (static_cast<size_t>(sz) <= sizeof(SequenceMetadata)) {
+    if (static_cast<size_t>(sz) < sizeof(SequenceMetadata)) {
         throw std::runtime_error("stream is missing header");
     }
 
-    // Read the metadata
+    // Read the header
     in.seekg(0);
     in.read(reinterpret_cast<char*>(&meta), sizeof(meta));
     if (!in) {
@@ -458,6 +458,13 @@ void Sequence::init_from_stream(std::istream& in) {
     // Check that it's a PPEF filetype and has version 1
     if (std::strncmp(meta.magic, "PPEF", 4) != 0 || meta.version != 1) {
         throw std::runtime_error("invalid magic and/or version");
+    }
+
+    // Special case: zero elements.
+    if (meta.n_elem == 0) {
+        block_last_.resize(0);
+        block_offs_.resize(0);
+        payload_.resize(0);
     }
 
     // Read the array of byte offsets for each EFBlock in the file
