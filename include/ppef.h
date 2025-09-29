@@ -134,13 +134,13 @@ struct EFBlock {
 };
 
 /*
- * Struct: PEFMetadata
+ * Struct: SequenceMetadata
  * -------------------
  * Metadata relevant for a PPEF-compressed file. We write this once in
  * the first 40 bytes of the file.
 */
 #pragma pack(push, 1)
-struct PEFMetadata {
+struct SequenceMetadata {
     char     magic[4];       // file magic ("PPEF")
     uint32_t version;        // 1
     uint64_t n_elem;         // total number of compressed elements
@@ -151,25 +151,25 @@ struct PEFMetadata {
 };
 #pragma pack(pop)
 // Desirable for byte-level alignment.
-static_assert(sizeof(PEFMetadata) == 40, "PEFMetadata must be 40 bytes");
+static_assert(sizeof(SequenceMetadata) == 40, "SequenceMetadata must be 40 bytes");
 
 
 /*
- * Class: PEF
- * ----------
+ * Class: Sequence
+ * ---------------
  * A nondecreasing sequence of integers in partitioned Elias-Fano (PEF)
  * format. Provides methods to serialize the sequence to a file.
 */
-class PEF {
+class Sequence {
 public:
     // Construct from a raw sequence of nondecreasing integers.
-    explicit PEF(
+    explicit Sequence(
         const std::vector<uint64_t>& values, // must be sorted!
         uint32_t block_size = 256
     );
 
     // Construct from a compressed PPEF file.
-    explicit PEF(const std::string& filepath);
+    explicit Sequence(const std::string& filepath);
 
     // Save contents to a file with magic "PPEF". Throws runtime_error
     // if we can't save.
@@ -178,10 +178,10 @@ public:
     // Decode the i^th EFBlock, returning its original integers.
     std::vector<uint64_t> decode_block(uint64_t i) const;
 
-    // Decode the entire *PEF* object, returning the whole original sequence.
+    // Decode the entire original sequence.
     std::vector<uint64_t> decode() const;
 
-    // Number of integers encoded in this PEF.
+    // Number of integers encoded in this Sequence.
     uint64_t n_elem() const;
 
     // Maximum number of integers per EFBlock.
@@ -190,14 +190,14 @@ public:
     // Total number of EFBlocks.
     uint64_t n_blocks() const;
 
-    // Print all PEFMetadata to stdout.
+    // Print all SequenceMetadata to stdout.
     void show_meta() const;
 
-    // Get a copy of the PEFMetadata.
-    PEFMetadata get_meta() const;
+    // Get a copy of the SequenceMetadata.
+    SequenceMetadata get_meta() const;
 
 private:
-    PEFMetadata meta {};
+    SequenceMetadata meta {};
     // Highest element in each block (size *n_blocks_*).
     std::vector<uint64_t> block_last_;
     // Byte offset of the start of each block in the file (size *n_blocks_*).

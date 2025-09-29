@@ -303,7 +303,7 @@ void EFBlock::show() const {
     std::cout << "Overall compression ratio: " << compression_ratio << std::endl;
 }
 
-PEF::PEF(
+Sequence::Sequence(
     const std::vector<uint64_t>& values,
     uint32_t block_size
 ) {
@@ -354,7 +354,7 @@ PEF::PEF(
         }
     }
 
-    // Configure PEFMetadata
+    // Configure SequenceMetadata
     meta.magic[0] = 'P';
     meta.magic[1] = 'P';
     meta.magic[2] = 'E';
@@ -364,7 +364,7 @@ PEF::PEF(
     meta.reserved = 0;
     meta.n_elem = n_elem;
     meta.n_blocks = n_blocks;
-    meta.payload_offset = sizeof(PEFMetadata) + n_blocks * sizeof(uint64_t) * 2;
+    meta.payload_offset = sizeof(SequenceMetadata) + n_blocks * sizeof(uint64_t) * 2;
 }
 
 void file_error(
@@ -378,7 +378,7 @@ void file_error(
     throw std::runtime_error(o.str());
 }
 
-void PEF::save(const std::string& path) const {
+void Sequence::save(const std::string& path) const {
     std::ofstream out(path, std::ios::binary);
     if (!out) {
         file_error("save", path, "failure to open file");
@@ -413,7 +413,7 @@ void PEF::save(const std::string& path) const {
     }
 }
 
-PEF::PEF(const std::string& path) {
+Sequence::Sequence(const std::string& path) {
     std::ifstream in(path, std::ios::binary | std::ios::ate);
     if (!in) {
         file_error("load", path, "failure to open file");
@@ -421,7 +421,7 @@ PEF::PEF(const std::string& path) {
 
     // Total file size (bytes)
     auto sz = in.tellg();
-    if (static_cast<size_t>(sz) <= sizeof(PEFMetadata)) {
+    if (static_cast<size_t>(sz) <= sizeof(SequenceMetadata)) {
         file_error("load", path, "empty file");
     }
 
@@ -458,7 +458,7 @@ PEF::PEF(const std::string& path) {
     }
 
     // Read all of the EFBlocks into memory (TODO: replace with mmap)
-    const size_t size_so_far = sizeof(PEFMetadata)
+    const size_t size_so_far = sizeof(SequenceMetadata)
         + meta.n_blocks * sizeof(uint64_t) * 2;
     const size_t bytes_to_read = static_cast<size_t>(sz) - size_so_far;
     payload_.resize(bytes_to_read);
@@ -471,7 +471,7 @@ PEF::PEF(const std::string& path) {
     }
 }
 
-std::vector<uint64_t> PEF::decode_block(uint64_t bi) const {
+std::vector<uint64_t> Sequence::decode_block(uint64_t bi) const {
     // Check for out-of-bounds
     if (bi >= meta.n_blocks) {
         std::ostringstream msg;
@@ -517,12 +517,12 @@ std::vector<uint64_t> PEF::decode_block(uint64_t bi) const {
     return o;
 }
 
-PEFMetadata PEF::get_meta() const {
-    PEFMetadata o = meta;
+SequenceMetadata Sequence::get_meta() const {
+    SequenceMetadata o = meta;
     return o;
 }
 
-void PEF::show_meta() const {
+void Sequence::show_meta() const {
     std::cout << "magic[0] = " << meta.magic[0] << "\n";
     std::cout << "magic[1] = " << meta.magic[1] << "\n";
     std::cout << "magic[2] = " << meta.magic[2] << "\n";
@@ -535,7 +535,7 @@ void PEF::show_meta() const {
     std::cout << "payload_offset = " << meta.payload_offset << "\n";
 }
 
-std::vector<uint64_t> PEF::decode() const {
+std::vector<uint64_t> Sequence::decode() const {
     std::vector<uint64_t> o;
     for (uint64_t bi = 0; bi < meta.n_blocks; ++bi) {
         std::vector<uint64_t> block = decode_block(bi);
@@ -544,15 +544,15 @@ std::vector<uint64_t> PEF::decode() const {
     return o;
 }
 
-uint64_t PEF::n_elem() const {
+uint64_t Sequence::n_elem() const {
     return meta.n_elem;
 }
 
-uint32_t PEF::block_size() const {
+uint32_t Sequence::block_size() const {
     return meta.block_size;
 }
 
-uint64_t PEF::n_blocks() const {
+uint64_t Sequence::n_blocks() const {
     return meta.n_blocks;
 }
 

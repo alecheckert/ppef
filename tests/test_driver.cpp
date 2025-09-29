@@ -141,12 +141,12 @@ void test_pef_construct_from_sequence() {
     assert(values.size() == n);
 
     // compress
-    PEF pef(values, block_size);
+    Sequence pef(values, block_size);
     assert(pef.n_elem() == static_cast<uint64_t>(values.size()));
     assert(pef.block_size() == block_size);
     assert(pef.n_blocks() == 4ULL); // 4 blocks of 256 elements to cover n=1024
 
-    // test PEF::decode_block
+    // test Sequence::decode_block
     std::vector<uint64_t> recon = pef.decode_block(0);
     assert(recon.size() == 256);
     for (size_t i = 0; i < 256; ++i) {
@@ -160,7 +160,7 @@ void test_pef_construct_from_sequence() {
         assert(recon.at(i) == values.at(i + 256));
     }
 
-    // test PEF::decode, which should decode the whole sequence
+    // test Sequence::decode, which should decode the whole sequence
     recon = pef.decode();
     assert(recon.size() == values.size());
     for (size_t i = 0; i < values.size(); ++i) {
@@ -178,12 +178,12 @@ void test_pef_construct_from_sequence_ragged() {
     assert(values.size() == n);
 
     // compress
-    PEF pef(values, block_size);
+    Sequence pef(values, block_size);
     assert(pef.n_elem() == static_cast<uint64_t>(values.size()));
     assert(pef.block_size() == block_size);
     assert(pef.n_blocks() == 6ULL); // blocks of 256 elements to cover n=1333
 
-    // test PEF::decode, which should decode the whole sequence
+    // test Sequence::decode, which should decode the whole sequence
     std::vector<uint64_t> recon = pef.decode();
     assert(recon.size() == values.size());
     for (size_t i = 0; i < values.size(); ++i) {
@@ -199,11 +199,11 @@ void test_pef_construct_from_sequence_empty() {
     assert(values.size() == n);
 
     // compress
-    PEF pef(values, block_size);
+    Sequence pef(values, block_size);
     assert(pef.n_elem() == static_cast<uint64_t>(values.size()));
     assert(pef.block_size() == block_size);
 
-    // test PEF::decode, which should decode the whole sequence
+    // test Sequence::decode, which should decode the whole sequence
     std::vector<uint64_t> recon = pef.decode();
     assert(recon.size() == values.size());
     for (size_t i = 0; i < values.size(); ++i) {
@@ -221,14 +221,14 @@ void test_pef_construct_from_file() {
     assert(values.size() == n);
 
     const std::string filepath("_test_file.ppef");
-    PEF pef(values, block_size);
+    Sequence pef(values, block_size);
     pef.save(filepath);
 
-    PEF pef2(filepath);
+    Sequence pef2(filepath);
 
     // Check that metadata is identical
-    const PEFMetadata meta = pef.get_meta();
-    const PEFMetadata meta2 = pef2.get_meta();
+    const SequenceMetadata meta = pef.get_meta();
+    const SequenceMetadata meta2 = pef2.get_meta();
     assert (meta2.magic[0] == meta.magic[0]);
     assert (meta2.magic[1] == meta.magic[1]);
     assert (meta2.magic[2] == meta.magic[2]);

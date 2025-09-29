@@ -9,7 +9,7 @@ def test_pef():
     block_size = 1 << 7
     values = np.random.randint(0, max_value, size=n_elem)
     values.sort()
-    pef = _ppef.PEF(values, block_size=block_size)
+    pef = _ppef.Sequence(values, block_size=block_size)
     assert pef.n_elem == n_elem
     assert pef.block_size == block_size
 
@@ -28,6 +28,6 @@ def test_pef():
     # test serialization to a file
     tmp = NamedTemporaryFile(suffix=".ppef")
     pef.save(tmp.name)
-    pef2 = _ppef.PEF(tmp.name)
+    pef2 = _ppef.Sequence(tmp.name)
     recon = pef.decode()
     assert (np.array(recon) == values).all()
