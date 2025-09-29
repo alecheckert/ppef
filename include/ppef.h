@@ -172,11 +172,16 @@ public:
         uint32_t block_size = 256
     );
 
-    // Construct from a compressed PPEF file.
-    explicit Sequence(const std::string& filepath);
+    // Construct from a serialized representation.
+    explicit Sequence(std::istream& in);
 
-    // Save contents to a file with magic "PPEF". Throws runtime_error
-    // if we can't save.
+    // Construct from a compressed PPEF file.
+    explicit Sequence(const std::string& path);
+
+    // Serialize this Sequence in its compressed state to a string.
+    std::string serialize() const;
+
+    // Save serialized Sequence to a file.
     void save(const std::string& path) const;
 
     // Decode the i^th EFBlock, returning its original integers.
@@ -219,6 +224,12 @@ private:
         payload_.resize(old + n);
         std::memcpy(payload_.data() + old, src, n);
     }
+
+    // Serialize this Sequence to an arbitrary ofstream
+    void serialize_to_stream(std::ostream&) const;
+
+    // Initialize from a serialized representation in a stream.
+    void init_from_stream(std::istream& in);
 };
 
 } // end namespace ppef

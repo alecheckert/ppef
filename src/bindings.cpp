@@ -5,6 +5,11 @@
 
 namespace py = pybind11;
 
+ppef::Sequence deserialize(const std::string& s) {
+    std::istringstream in(s);
+    return ppef::Sequence(in);
+}
+
 PYBIND11_MODULE(_ppef, m) {
     py::class_<ppef::SequenceMetadata>(m, "SequenceMetadata", py::module_local());
     py::class_<ppef::Sequence>(m, "Sequence", py::module_local())
@@ -17,6 +22,20 @@ PYBIND11_MODULE(_ppef, m) {
             py::arg("values"),
             py::arg("block_size") = 256
         )
+        .def(
+            py::pickle(
+                // __getstate__
+                [](const ppef::Sequence& s) {
+                    std::string o = s.serialize();
+                    return py::bytes(o.data(), o.size());
+                },
+                // __setstate__
+                [](const py::bytes& b) {
+                    std::istringstream in(b);
+                    return ppef::Sequence(in);
+                }
+            )
+        )
         .def_property_readonly("n_elem", &ppef::Sequence::n_elem)
         .def_property_readonly("block_size", &ppef::Sequence::block_size)
         .def_property_readonly("n_blocks", &ppef::Sequence::n_blocks)
@@ -24,5 +43,13 @@ PYBIND11_MODULE(_ppef, m) {
         .def("show_meta", &ppef::Sequence::show_meta)
         .def("save", &ppef::Sequence::save, py::arg("filepath"))
         .def("decode_block", &ppef::Sequence::decode_block, py::arg("block_idx"))
-        .def("decode", &ppef::Sequence::decode);
+        .def("decode", &ppef::Sequence::decode)
+        .def(
+            "serialize",
+            [](const ppef::Sequence& s) {
+                std::string o = s.serialize();
+                return py::bytes(o.data(), o.size());
+            }
+        );
+    m.def("deserialize", &deserialize, py::arg("serialized"));
 }

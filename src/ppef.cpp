@@ -388,63 +388,76 @@ void file_error(
     throw std::runtime_error(o.str());
 }
 
-void Sequence::save(const std::string& path) const {
-    std::ofstream out(path, std::ios::binary);
+void Sequence::serialize_to_stream(std::ostream& out) const {
     if (!out) {
-        file_error("save", path, "failure to open file");
+        throw std::runtime_error("failed to open stream for writing");
     }
     out.write(
         reinterpret_cast<const char*>(&meta),
         sizeof(meta)
     );
     if (!out) {
-        file_error("save", path, "failure to write header");
+        throw std::runtime_error("failed to write header");
     }
     out.write(
         reinterpret_cast<const char*>(block_last_.data()),
         static_cast<std::streamsize>(block_last_.size() * sizeof(uint64_t))
     );
     if (!out) {
-        file_error("save", path, "failure to save block_last_");
+        throw std::runtime_error("failed to write block_last_");
     }
     out.write(
         reinterpret_cast<const char*>(block_offs_.data()),
         static_cast<std::streamsize>(block_offs_.size() * sizeof(uint64_t))
     );
     if (!out) {
-        file_error("save", path, "failure to save block_offs_");
+        throw std::runtime_error("failed to write block_offs_");
     }
     out.write(
         reinterpret_cast<const char*>(payload_.data()),
         static_cast<std::streamsize>(payload_.size())
     );
     if (!out) {
-        file_error("save", path, "failure to save payload_");
+        throw std::runtime_error("failed to write payload_");
     }
 }
 
-Sequence::Sequence(const std::string& path) {
-    std::ifstream in(path, std::ios::binary | std::ios::ate);
+std::string Sequence::serialize() const {
+    std::ostringstream o;
+    serialize_to_stream(o);
+    return o.str();
+}
+
+void Sequence::save(const std::string& path) const {
+    std::ofstream o(path, std::ios::binary);
+    if (!o) {
+        file_error("save", path, "failure to open file");
+    }
+    serialize_to_stream(o);
+}
+
+void Sequence::init_from_stream(std::istream& in) {
     if (!in) {
-        file_error("load", path, "failure to open file");
+        throw std::runtime_error("stream is not readable");
     }
 
     // Total file size (bytes)
+    in.seekg(0, std::ios::end);
     auto sz = in.tellg();
     if (static_cast<size_t>(sz) <= sizeof(SequenceMetadata)) {
-        file_error("load", path, "empty file");
+        throw std::runtime_error("stream cannot contain header");
     }
 
     // Read the metadata
     in.seekg(0);
     in.read(reinterpret_cast<char*>(&meta), sizeof(meta));
     if (!in) {
-        file_error("load", path, "failure to read header");
+        throw std::runtime_error("failure to read header");
     }
 
     // Check that it's a PPEF filetype and has version 1
     if (std::strncmp(meta.magic, "PPEF", 4) != 0 || meta.version != 1) {
-        file_error("load", path, "invalid magic and/or version");
+        throw std::runtime_error("invalid magic and/or version");
     }
 
     // Read the array of byte offsets for each EFBlock in the file
@@ -454,7 +467,7 @@ Sequence::Sequence(const std::string& path) {
         meta.n_blocks * sizeof(uint64_t)
     );
     if (!in) {
-        file_error("load", path, "failure to read block_last_ array");
+        throw std::runtime_error("failure to read block_last_ array");
     }
 
     // Read the array of highest values for each EFBlock in the file
@@ -464,7 +477,7 @@ Sequence::Sequence(const std::string& path) {
         meta.n_blocks * sizeof(uint64_t)
     );
     if (!in) {
-        file_error("load", path, "failure to read block_offs_ array");
+        throw std::runtime_error("failure to read block_offs_ array");
     }
 
     // Read all of the EFBlocks into memory (TODO: replace with mmap)
@@ -477,8 +490,18 @@ Sequence::Sequence(const std::string& path) {
         bytes_to_read
     );
     if (!in) {
-        file_error("load", path, "failure to read payload_ array");
+        throw std::runtime_error("failure to read payload_ array");
     }
+}
+
+Sequence::Sequence(const std::string& path) {
+    std::ifstream in(path, std::ios::binary | std::ios::ate);
+    if (!in) throw std::runtime_error("failed to open file for reading");
+    init_from_stream(in);
+}
+
+Sequence::Sequence(std::istream& in) {
+    init_from_stream(in);
 }
 
 std::vector<uint64_t> Sequence::decode_block(uint64_t bi) const {
