@@ -445,7 +445,7 @@ void Sequence::init_from_stream(std::istream& in) {
     in.seekg(0, std::ios::end);
     auto sz = in.tellg();
     if (static_cast<size_t>(sz) <= sizeof(SequenceMetadata)) {
-        throw std::runtime_error("stream cannot contain header");
+        throw std::runtime_error("stream is missing header");
     }
 
     // Read the metadata

@@ -11,27 +11,27 @@ def test_pef():
     block_size = 1 << 7
     values = np.random.randint(0, max_value, size=n_elem)
     values.sort()
-    pef = ppef.Sequence(values, block_size=block_size)
-    assert pef.n_elem == n_elem
-    assert pef.block_size == block_size
+    seq = ppef.Sequence(values, block_size=block_size)
+    assert seq.n_elem == n_elem
+    assert seq.block_size == block_size
 
     # test blockwise decompression
-    recon = pef.decode_block(0)
+    recon = seq.decode_block(0)
     assert (np.array(recon) == values[: len(recon)]).all()
 
     # test full decompression
-    recon = pef.decode()
+    recon = seq.decode()
     assert (np.array(recon) == values).all()
 
     # "does-it-even-run?" tests
-    _ = pef.get_meta()
-    _ = pef.n_blocks
+    _ = seq.get_meta()
+    _ = seq.n_blocks
 
     # test serialization to a file
     tmp = NamedTemporaryFile(suffix=".ppef")
-    pef.save(tmp.name)
-    pef2 = ppef.Sequence(tmp.name)
-    recon = pef.decode()
+    seq.save(tmp.name)
+    seq2 = ppef.Sequence(tmp.name)
+    recon = seq2.decode()
     assert (np.array(recon) == values).all()
 
 
@@ -54,7 +54,17 @@ def test_pickling():
     block_size = 1 << 7
     values = np.random.randint(0, max_value, size=n_elem)
     values.sort()
-    pef = ppef.Sequence(values, block_size=block_size)
-    serialized = pickle.dumps(pef)
-    pef2 = pickle.loads(serialized)
-    assert (np.array(pef2.decode()) == values).all()
+    seq = ppef.Sequence(values, block_size=block_size)
+    serialized = pickle.dumps(seq)
+    seq2 = pickle.loads(serialized)
+    assert (np.array(seq2.decode()) == values).all()
+
+
+def test_empty():
+    """Stability test."""
+    seq = ppef.Sequence([1])
+    assert seq.n_elem == 1
+    serialized = seq.serialize()
+    seq2 = ppef.deserialize(serialized)
+    assert seq2.n_elem == 1
+    assert seq.get(0) == 1
