@@ -44,7 +44,8 @@ PYBIND11_MODULE(ppef, m) {
         .def("save", &ppef::Sequence::save, py::arg("filepath"))
         .def("decode_block", &ppef::Sequence::decode_block, py::arg("block_idx"))
         .def("decode", &ppef::Sequence::decode)
-        .def("get", &ppef::Sequence::get, py::arg("i"))
+        .def("__getitem__", &ppef::Sequence::get, py::arg("i"))
+        .def("__len__", &ppef::Sequence::n_elem)
         .def(
             "serialize",
             [](const ppef::Sequence& s) {
