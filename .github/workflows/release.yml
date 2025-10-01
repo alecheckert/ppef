@@ -38,7 +38,7 @@ jobs:
       - name: Upload wheels as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ runner.os }}
+          name: wheels-${{ runner.os }}-${{ matrix.cibw_archs }}
           path: wheelhouse/*.whl
           if-no-files-found: error
           retention-days: 1
