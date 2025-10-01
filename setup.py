@@ -7,14 +7,14 @@ import sys
 
 SRC_FILES = list(glob(os.path.join("src", "*.cpp")))
 INCLUDE_DIRS = ["include"]
-CXX_STD = 17
+CXX_STD = 17 # can also be >=c++11
 
 ext_modules = [
     Pybind11Extension(
         "ppef",
         SRC_FILES,
         include_dirs=INCLUDE_DIRS,
-        cxx_std=17,
+        cxx_std=CXX_STD,
     )
 ]
 

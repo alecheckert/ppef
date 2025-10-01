@@ -34,7 +34,9 @@ struct NamedTemporaryFile {
 
     NamedTemporaryFile(const std::string& path): path(path) {}
     ~NamedTemporaryFile() {
-        if (std::filesystem::exists(path)) {
+        FILE* file = fopen(path.c_str(), "r");
+        if (file) {
+            fclose(file);
             std::remove(path.c_str());
         }
     }

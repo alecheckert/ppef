@@ -1,6 +1,6 @@
 CC=g++
 INCLUDE_DIR = ../include
-CPPFLAGS = -std=c++17 -fPIC -I$(INCLUDE_DIR)
+CPPFLAGS = -std=c++11 -fPIC -I$(INCLUDE_DIR)
 LDFLAGS = -Wall
 
 SRCS = test_driver.cpp ../src/ppef.cpp
