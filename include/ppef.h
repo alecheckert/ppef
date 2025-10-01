@@ -126,6 +126,9 @@ struct EFBlock {
     // Unary-encoded high bits
     std::vector<uint64_t> high;
 
+    // Tries to move meta, low, and high
+    EFBlock(EFBlockMetadata meta, std::vector<uint64_t> low, std::vector<uint64_t> high);
+
     // Choose how many bits from each integer to encode in the "low" vs.
     // "high" parts. This optimizes the compression ratio for *n*
     // integers uniformly distributed between 0 and *range*.
@@ -161,7 +164,6 @@ struct SequenceMetadata {
 // Desirable for byte-level alignment.
 static_assert(sizeof(SequenceMetadata) == 40, "SequenceMetadata must be 40 bytes");
 
-
 /*
  * Class: Sequence
  * ---------------
@@ -170,6 +172,9 @@ static_assert(sizeof(SequenceMetadata) == 40, "SequenceMetadata must be 40 bytes
 */
 class Sequence {
 public:
+    // Construct an empty sequence.
+    explicit Sequence(uint32_t block_size = 256);
+
     // Construct from a raw sequence of nondecreasing integers.
     explicit Sequence(
         const std::vector<uint64_t>& values, // must be sorted!
@@ -197,8 +202,14 @@ public:
     // Decode the i^th value in the sequence.
     uint64_t get(uint64_t i) const;
 
+    // Get the bi^th EFBlock in the sequence (without decoding).
+    EFBlock get_efblock(uint64_t bi) const;
+
     // Check if an element exists
     bool contains(uint64_t val) const;
+
+    // Intersect with another Sequence, returning a new Sequence
+    Sequence intersect(const Sequence& other) const;
 
     // Number of integers encoded in this Sequence.
     uint64_t n_elem() const;

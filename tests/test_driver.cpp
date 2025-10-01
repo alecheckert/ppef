@@ -230,8 +230,26 @@ void test_pef_construct_from_sequence() {
         assert(recon.at(i) == values.at(i));
     }
 
+    // ...and test equivalence of these results with Sequence::get_efblock
+    EFBlock blk0 = pef.get_efblock(0);
+    assert (blk0.meta.n_elem == 256);
+    recon = blk0.decode();
+    assert(recon.size() == 256);
+    for (size_t i = 0; i < 256; ++i) {
+        assert(recon.at(i) == values.at(i));
+    }
+
     // second block
     recon = pef.decode_block(1);
+    assert(recon.size() == 256);
+    for (size_t i = 0; i < 256; ++i) {
+        assert(recon.at(i) == values.at(i + 256));
+    }
+
+    // ...and test equivalence of these results with Sequence::get_efblock
+    EFBlock blk1 = pef.get_efblock(1);
+    assert (blk1.meta.n_elem == 256);
+    recon = blk1.decode();
     assert(recon.size() == 256);
     for (size_t i = 0; i < 256; ++i) {
         assert(recon.at(i) == values.at(i + 256));
@@ -243,6 +261,7 @@ void test_pef_construct_from_sequence() {
     for (size_t i = 0; i < values.size(); ++i) {
         assert(recon.at(i) == values.at(i));
     }
+
 }
 
 void test_pef_construct_from_sequence_ragged() {
@@ -265,6 +284,14 @@ void test_pef_construct_from_sequence_ragged() {
     assert(recon.size() == values.size());
     for (size_t i = 0; i < values.size(); ++i) {
         assert(recon.at(i) == values.at(i));
+    }
+
+    // test Sequence::decode_block on the last bloc, which ranges from 1280 to 1333 (53 elements)
+    const uint64_t last_block_idx = pef.n_blocks() - 1;
+    recon = pef.decode_block(last_block_idx);
+    assert (recon.size() == 53);
+    for (size_t i = 0; i < 53; ++i) {
+        assert (recon.at(i) == values.at(i + 1280));
     }
 }
 
@@ -325,6 +352,69 @@ void test_pef_construct_from_file() {
     }
 }
 
+void test_sequence_intersect() {
+    const uint32_t block_size_0 = 2,
+                   block_size_1 = 3;
+    std::vector<uint64_t> values_0 {1,    3, 4,     6,    10,  11,  12,  13};
+    std::vector<uint64_t> values_1 {   2,    4,  5,    9,      11,          15};
+    Sequence seq0(values_0, block_size_0),
+             seq1(values_1, block_size_1);
+    Sequence out = seq0.intersect(seq1);
+    assert (out.n_elem() == 2);
+    assert (out.n_blocks() == 1);
+    assert (out.block_size() == seq0.block_size());
+    assert (out.contains(4));
+    assert (out.contains(11));
+
+    // Check that all of the metadata is correct by serializing / deserializing
+    const std::string serialized = out.serialize();
+    std::istringstream in(serialized);
+    Sequence out2(in);
+    assert (out2.n_elem() == 2);
+    assert (out2.n_blocks() == 1);
+    assert (out2.block_size() == seq0.block_size());
+    assert (out2.contains(4));
+    assert (out2.contains(11));
+}
+
+void test_sequence_intersect_left_side_empty() {
+    std::vector<uint64_t> values_0 {};
+    std::vector<uint64_t> values_1 {2, 4, 5, 9, 11, 15};
+    Sequence seq0(values_0),
+             seq1(values_1);
+    Sequence out = seq0.intersect(seq1);
+    assert (out.n_elem() == 0);
+    assert (out.n_blocks() == 0);
+    assert (out.block_size() == seq0.block_size());
+
+    // Check that all of the metadata is correct by serializing / deserializing
+    const std::string serialized = out.serialize();
+    std::istringstream in(serialized);
+    Sequence out2(in);
+    assert (out2.n_elem() == 0);
+    assert (out2.n_blocks() == 0);
+    assert (out2.block_size() == seq0.block_size());
+}
+
+void test_sequence_intersect_right_side_empty() {
+    std::vector<uint64_t> values_0 {2, 4, 5, 9, 11, 15};
+    std::vector<uint64_t> values_1 {};
+    Sequence seq0(values_0),
+             seq1(values_1);
+    Sequence out = seq0.intersect(seq1);
+    assert (out.n_elem() == 0);
+    assert (out.n_blocks() == 0);
+    assert (out.block_size() == seq0.block_size());
+
+    // Check that all of the metadata is correct by serializing / deserializing
+    const std::string serialized = out.serialize();
+    std::istringstream in(serialized);
+    Sequence out2(in);
+    assert (out2.n_elem() == 0);
+    assert (out2.n_blocks() == 0);
+    assert (out2.block_size() == seq0.block_size());
+}
+
 void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
@@ -361,6 +451,15 @@ void test_driver() {
 
     std::cout << "test_pef_construct_from_file\n";
     test_pef_construct_from_file();
+
+    std::cout << "test_sequence_intersect\n";
+    test_sequence_intersect();
+
+    std::cout << "test_sequence_intersect_left_side_empty\n";
+    test_sequence_intersect_left_side_empty();
+
+    std::cout << "test_sequence_intersect_right_side_empty\n";
+    test_sequence_intersect_right_side_empty();
 }
 
 int main() {

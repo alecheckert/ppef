@@ -187,6 +187,16 @@ void BitWriter::flush() {
     }
 }
 
+EFBlock::EFBlock(
+    EFBlockMetadata meta,
+    std::vector<uint64_t> low,
+    std::vector<uint64_t> high
+):
+    meta(std::move(meta)),
+    low(std::move(low)),
+    high(std::move(high))
+{}
+
 inline uint32_t EFBlock::choose_l(uint64_t range, uint32_t n) {
     if (n == 0) return 0;
     uint64_t q = range / (uint64_t)n; // floor(range/n)
@@ -341,6 +351,23 @@ void EFBlock::show() const {
     }
     const double compression_ratio = static_cast<double>(meta.n_elem) / (low.size() + high.size());
     std::cout << "Overall compression ratio: " << compression_ratio << std::endl;
+}
+
+Sequence::Sequence(uint32_t block_size):
+    block_last_(0),
+    block_offs_(0),
+    payload_(0)
+{
+    meta.magic[0] = 'P';
+    meta.magic[1] = 'P';
+    meta.magic[2] = 'E';
+    meta.magic[3] = 'F';
+    meta.version = 1;
+    meta.block_size = block_size;
+    meta.reserved = 0;
+    meta.n_elem = 0;
+    meta.n_blocks = 0;
+    meta.payload_offset = sizeof(SequenceMetadata); // + meta.n_blocks * sizeof(uint64_t) * 2;
 }
 
 Sequence::Sequence(
@@ -597,6 +624,25 @@ uint64_t Sequence::get(uint64_t i) const {
     return values.at(block_pos);
 }
 
+EFBlock Sequence::get_efblock(uint64_t bi) const {
+    if (bi >= meta.n_blocks) {
+        throw std::runtime_error("Sequence::get_efblock: out-of-bounds");
+    }
+    const uint8_t* base = payload_.data() + block_offs_.at(bi);
+    EFBlockMetadata meta;
+    std::memcpy(&meta, base, sizeof(meta));
+    const uint64_t* loww = reinterpret_cast<const uint64_t*>(base+sizeof(meta));
+    std::vector<uint64_t> low(meta.low_words);
+    std::memcpy(low.data(), loww, sizeof(uint64_t)*meta.low_words);
+    const uint64_t* highw = loww + meta.low_words;
+    std::vector<uint64_t> high(meta.high_words);
+    std::memcpy(high.data(), highw, sizeof(uint64_t)*meta.high_words);
+    EFBlock blk {
+        meta, low, high
+    };
+    return blk;
+}
+
 bool Sequence::contains(uint64_t q) const {
     if (meta.n_elem == 0) {
         return false;
@@ -637,6 +683,121 @@ std::vector<uint64_t> Sequence::decode() const {
         std::vector<uint64_t> block = decode_block(bi);
         o.insert(o.end(), block.begin(), block.end());
     }
+    return o;
+}
+
+Sequence Sequence::intersect(const Sequence& other) const {
+    const uint64_t n_blocks_0 = static_cast<uint64_t>(meta.n_blocks),
+                   n_blocks_1 = static_cast<uint64_t>(other.n_blocks()),
+                   block_size_0 = static_cast<uint64_t>(meta.block_size),
+                   block_size_1 = static_cast<uint64_t>(other.block_size());
+    Sequence o(block_size_0);
+    if (meta.n_elem == 0 || other.meta.n_elem == 0) {
+        return o;
+    }
+
+    // Values in the current block to be compressed; flush at block_size_0
+    std::vector<uint64_t> new_values;
+
+    // Global index from 0 to n_elem
+    uint64_t idx_0 = 0,
+             idx_1 = 0,
+    // Corresponding values
+             val_0,
+             val_1,
+    // Index within the current block
+             idx_in_block_0 = 0,
+             idx_in_block_1 = 0,
+    // Current block indices
+             block_idx_0 = 0, 
+             block_idx_1 = 0,
+    // Byte offset within encoded payload
+             cursor = 0;
+
+    // Current values within each block
+    std::vector<uint64_t> values_0 = decode_block(block_idx_0),
+                          values_1 = other.decode_block(block_idx_1);
+
+    while (idx_0 < meta.n_elem && idx_1 < other.meta.n_elem) {
+        // Decode the next block(s) if necessary
+        if (idx_in_block_0 == block_size_0) {
+            ++block_idx_0;
+            values_0 = decode_block(block_idx_0);
+            idx_in_block_0 = 0;
+        }
+        if (idx_in_block_1 == block_size_1) {
+            ++block_idx_1;
+            values_1 = other.decode_block(block_idx_1);
+            idx_in_block_1 = 0;
+        }
+
+        // Get the values to compare
+        val_0 = values_0.at(idx_in_block_0);
+        val_1 = values_1.at(idx_in_block_1);
+
+        // Actually do the intersection and increment indices
+        if (val_0 == val_1) {
+            new_values.push_back(val_0);
+            ++o.meta.n_elem;
+            if (new_values.size() == block_size_0) {
+                EFBlock blk(new_values.data(), new_values.size());
+                o.block_offs_.push_back(cursor);
+                // Write the BlockHeader.
+                o.append_bytes(&blk.meta, sizeof(blk.meta));
+                cursor += sizeof(blk.meta);
+                // Write the low bit representation (u64)
+                if (!blk.low.empty()) {
+                    o.append_bytes(blk.low.data(), blk.low.size() * sizeof(uint64_t));
+                    cursor += blk.low.size() * sizeof(uint64_t);
+                }
+                // Write the high bit representation (u64)
+                if (!blk.high.empty()) {
+                    o.append_bytes(blk.high.data(), blk.high.size() * sizeof(uint64_t));
+                    cursor += blk.high.size() * sizeof(uint64_t);
+                }
+                // Update indices
+                o.block_last_.push_back(new_values.back());
+                ++o.meta.n_blocks;
+                new_values.clear();
+            }
+            ++idx_0;
+            ++idx_in_block_0;
+            ++idx_1;
+            ++idx_in_block_1;
+        } else if (val_0 < val_1) {
+            ++idx_0;
+            ++idx_in_block_0;
+        } else {
+            ++idx_1;
+            ++idx_in_block_1;
+        }
+    }
+
+    // Flush the last block, if necessary
+    if (new_values.size() > 0) {
+        EFBlock blk(new_values.data(), new_values.size());
+        o.block_offs_.push_back(cursor);
+        // Write the BlockHeader.
+        o.append_bytes(&blk.meta, sizeof(blk.meta));
+        cursor += sizeof(blk.meta);
+        // Write the low bit representation (u64)
+        if (!blk.low.empty()) {
+            o.append_bytes(blk.low.data(), blk.low.size() * sizeof(uint64_t));
+            cursor += blk.low.size() * sizeof(uint64_t);
+        }
+        // Write the high bit representation (u64)
+        if (!blk.high.empty()) {
+            o.append_bytes(blk.high.data(), blk.high.size() * sizeof(uint64_t));
+            cursor += blk.high.size() * sizeof(uint64_t);
+        }
+        // Update indices
+        o.block_last_.push_back(new_values.back());
+        ++o.meta.n_blocks;
+    }
+
+    // Update payload offset for output files.
+    o.meta.payload_offset = sizeof(SequenceMetadata) + o.meta.n_blocks * sizeof(uint64_t) * 2;
+
     return o;
 }
 
