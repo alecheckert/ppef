@@ -377,6 +377,28 @@ void test_sequence_intersect() {
     assert (out2.contains(11));
 }
 
+// Test Sequence::intersect when there are large gaps in the input
+// Sequence(s).
+void test_sequence_intersect_with_gap() {
+    const uint32_t block_size_0 = 2,
+                   block_size_1 = 3;
+    std::vector<uint64_t> values_0 {
+        1,    3, 4,     6, 7, 10, 11, 17, 21, 33, 55, 77, 99, 101,     133, 145
+    };
+    std::vector<uint64_t> values_1 {   
+           2,    4,  5,                                       101, 107,     145
+    };
+    Sequence seq0(values_0, block_size_0),
+             seq1(values_1, block_size_1);
+    Sequence out = seq0.intersect(seq1);
+    assert (out.n_elem() == 3);
+    assert (out.n_blocks() == 2);
+    assert (out.block_size() == seq0.block_size());
+    assert (out.contains(4));
+    assert (out.contains(101));
+    assert (out.contains(145));
+}
+
 void test_sequence_intersect_left_side_empty() {
     std::vector<uint64_t> values_0 {};
     std::vector<uint64_t> values_1 {2, 4, 5, 9, 11, 15};
@@ -555,6 +577,9 @@ void test_driver() {
 
     std::cout << "test_sequence_intersect\n";
     test_sequence_intersect();
+
+    std::cout << "test_sequence_intersect_with_gap\n";
+    test_sequence_intersect_with_gap();
 
     std::cout << "test_sequence_intersect_left_side_empty\n";
     test_sequence_intersect_left_side_empty();
