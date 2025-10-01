@@ -2,13 +2,13 @@
 
 Compact C++11/Python implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615).
 
-Our main interface is a `Sequence` object that provides a compressed in-memory representation of a nondecreasing sequence of unsigned integers. Following Ottoviano & Venturini, we divide this sequence into "blocks" that are each independently encoded with Elias-Fano, using adaptive high/low bit ratios. This partitioning scheme increases compression efficiency, but it also has a number of other benefits that we exploit here:
+Our main interface is a `Sequence` object that provides a compressed in-memory representation of a nondecreasing sequence of unsigned integers. Following Ottoviano & Venturini, we divide this sequence into "blocks" that are each independently encoded with Elias-Fano, using adaptive high/low bit ratios. This partitioning scheme increases compression efficiency: for large sets, compression ratios of >10-20X are typical. It also has a number of other benefits that we exploit here:
  - $O(1)$ random access _without decompression_
  - $O(n+m)$ intersections and unions _without decompression_
  - $O(\log (n))$ set membership tests _without decompression_
  - Trivial $O(n)$ serialization and deserialization
 
-This makes the `Sequence` well-suited to storing inverted indices in search algorithms. All operations maintain sorting on the input sequence.
+This makes the `Sequence` well-suited to storing large inverted indices in search algorithms. All operations maintain sorting on the input sequence.
 
 Our implementation also has some other benefits:
  - No external C/C++ dependencies
@@ -25,7 +25,8 @@ Limitations include:
 import numpy as np
 from ppef import Sequence, deserialize
 
-# Sample a sequence of integers
+# Sample a sequence of integers. These are uniformly distributed, which is
+# a worst-case situation for Elias-Fano encoding.
 values = np.random.randint(0, 1<<16, size=1<<22)
 values.sort()
 
