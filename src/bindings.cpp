@@ -48,6 +48,7 @@ PYBIND11_MODULE(ppef, m) {
         .def("__contains__", &ppef::Sequence::contains, py::arg("q"))
         .def("__len__", &ppef::Sequence::n_elem)
         .def("__and__", &ppef::Sequence::intersect, py::arg("other"))
+        .def("__or__", &ppef::Sequence::operator|, py::arg("other"))
         .def(
             "serialize",
             [](const ppef::Sequence& s) {

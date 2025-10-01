@@ -79,3 +79,15 @@ def test_intersect():
     seq2 = seq0 & seq1
     expected = set(seq0.decode()) & set(seq1.decode())
     assert set(seq2.decode()) == expected
+
+
+def test_union():
+    values_0 = np.random.randint(0, 1 << 16, size=(1 << 16))
+    values_1 = np.random.randint(0, 1 << 16, size=(1 << 16))
+    values_0.sort()
+    values_1.sort()
+    seq0 = ppef.Sequence(values_0)
+    seq1 = ppef.Sequence(values_1)
+    seq2 = seq0 | seq1
+    expected = set(seq0.decode()) | set(seq1.decode())
+    assert set(seq2.decode()) == expected
