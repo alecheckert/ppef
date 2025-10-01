@@ -21,13 +21,11 @@ jobs:
         env:
           CIBW_BUILD: "cp310-manylinux_x86_64 cp310-macosx_x86_64 cp310-macosx_arm64"
           CIBW_TEST_COMMAND: 'pip install pytest && pytest {project}/tests'
-          # CIBW_ARCHS_WINDOWS: AMD64 # Example for specific architecture on Windows
-          # # Add any other cibuildwheel environment variables here
 
       - name: Upload wheels as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cibuildwheel-wheels
+          name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   create_release:
@@ -40,7 +38,7 @@ jobs:
       - name: Download all wheels
         uses: actions/download-artifact@v4
         with:
-          name: cibuildwheel-wheels
+          name:
           path: ./wheelhouse
 
       - name: Create Release
