@@ -11,6 +11,7 @@ ppef::Sequence deserialize(const std::string& s) {
 }
 
 PYBIND11_MODULE(ppef, m) {
+    m.attr("__version__") = VERSION_INFO; // see setup.py
     py::class_<ppef::SequenceMetadata>(m, "SequenceMetadata", py::module_local());
     py::class_<ppef::Sequence>(m, "Sequence", py::module_local())
         .def(
