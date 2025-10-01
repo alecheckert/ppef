@@ -15,6 +15,10 @@
 #include <cstdint>
 #include <cstring>
 
+#if defined(_MSC_VER) && !defined(__clang__)
+  #include <intrin.h>
+#endif
+
 namespace ppef {
 
 // floor(log2(x))

@@ -3,6 +3,11 @@
 namespace ppef {
 
 inline uint32_t floor_log2_u64(uint64_t x) {
+#if defined(_MSC_VER) && !defined(__clang__)
+    unsigned long idx;
+    _BitScanReverse64(&idx, x);
+    return (uint32_t)idx;
+#else
     // 63u: unsigned integer literal with value 63.
     // __builtin_clzll: GCC builtin that counts the number of leading
     //   zero bits in an unsigned long long (uint64_t). Undefined behavior
