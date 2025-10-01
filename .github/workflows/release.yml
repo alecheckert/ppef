@@ -30,7 +30,7 @@ jobs:
         env:
           CIBW_ARCHS_LINUX: auto64
           CIBW_ARCHS_MACOS: "x86_64 arm64"
-          CIBW_SKIP: "pp* *-musllinux_*"
+          CIBW_SKIP: "pp* *-musllinux_* cp36-* cp37-* cp38-*"
           CIBW_TEST_COMMAND: 'pip install pytest && pytest {project}/tests -s'
 
       - name: Upload wheels as artifact
