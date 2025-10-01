@@ -189,6 +189,25 @@ void test_sequence_get() {
     }
 }
 
+void test_sequence_contains() {
+    // 1024 integers from 0 to 4096: can be represented in 7 bits
+    const size_t n = 1<<10;
+    const uint64_t max_value = 1<<12;
+    const std::vector<uint64_t> values = random_sorted_integers(n, max_value);
+    assert(std::is_sorted(values.begin(), values.end()));
+    assert(values.size() == n);
+
+    // Encode
+    Sequence seq(values);
+
+    // check for set membership
+    for (uint64_t q = 0; q < max_value; ++q) {
+        bool truth = std::binary_search(values.begin(), values.end(), q);
+        bool received = seq.contains(q);
+        assert (received == truth);
+    }
+}
+
 void test_pef_construct_from_sequence() {
     const size_t n = 1<<10;
     const uint64_t max_value = 1<<12;
@@ -324,6 +343,9 @@ void test_driver() {
 
     std::cout << "test_sequence_get\n";
     test_sequence_get();
+
+    std::cout << "test_sequence_contains\n";
+    test_sequence_contains();
 
     std::cout << "test_efblock_size_one\n";
     test_efblock_size_one();

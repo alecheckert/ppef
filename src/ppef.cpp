@@ -16,6 +16,36 @@ std::string to_binary(uint64_t x) {
     return o;
 }
 
+/*
+ *  Function: supremum_index
+ *  ------------------------
+ *  Return the index of the element in a sorted vector *v* corresponding
+ *  to the smallest value greater than or equal to *q*.
+*/
+size_t supremum_index(const std::vector<uint64_t>& v, const uint64_t q) {
+    if (v.size() == 0) {
+        throw std::runtime_error("supremum_index: v must be nonempty");
+    }
+    if (v.back() < q) {
+        throw std::runtime_error("supremum_index: q is larger than the largest element in v");
+    }
+    if (q <= v.front()) {
+        return 0;
+    }
+    size_t lo = 0,
+           hi = v.size() - 1,
+           mid;
+    while (lo + 1 < hi) {
+        mid = lo + (hi - lo) / 2;
+        if (q <= v[mid]) {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    return hi;
+}
+
 inline uint32_t floor_log2_u64(uint64_t x) {
     // 63u: unsigned integer literal with value 63.
     // __builtin_clzll: GCC builtin that counts the number of leading
@@ -567,6 +597,21 @@ uint64_t Sequence::get(uint64_t i) const {
     return values.at(block_pos);
 }
 
+bool Sequence::contains(uint64_t q) const {
+    if (meta.n_elem == 0) {
+        return false;
+    }
+    else if (block_last_.back() < q) {
+        return false;
+    }
+    // binary search to identify the EFBlock that would contain this element
+    size_t block_idx = supremum_index(block_last_, q);
+    // decompress this block
+    std::vector<uint64_t> values = decode_block(block_idx);
+    // binary search to identify the element within this block
+    return std::binary_search(values.begin(), values.end(), q);
+}
+
 SequenceMetadata Sequence::get_meta() const {
     SequenceMetadata o = meta;
     return o;
@@ -594,26 +639,6 @@ std::vector<uint64_t> Sequence::decode() const {
     }
     return o;
 }
-
-/*
-uint64_t Sequence::get(uint64_t i) const {
-    if (i >= meta.n_elem) {
-        throw std::runtime_error("Sequence::get: out of bounds index");
-    }
-    const uint64_t bi = i / meta.block_size,
-                   offset = i % meta.block_size;
-    // Pointer to the start of this block in the raw file.
-    const uint8_t* base = payload_.data() + block_offs_.at(bi);
-    // Read the EFBlock header.
-    EFBlockMetadata block_meta {};
-    std::memcpy(&block_meta, base, sizeof(block_meta));
-    // Pointer to the start of the low and high bits
-    const uint8_t *low_bits = base + sizeof(block_meta),
-                  *high_bits = base + sizeof(block_meta) + block_meta.low_words * 8;
-    offset * l 
-    base + sizeof(block_meta) + offset * l
-}
-*/
 
 uint64_t Sequence::n_elem() const {
     return meta.n_elem;

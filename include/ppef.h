@@ -35,6 +35,10 @@ inline uint64_t next_one_at_or_after(
     uint64_t pos
 );
 
+// return the index of the element in a sorted vector *v* corresponding
+// to the smallest element greater than or equal to *q*
+size_t supremum_index(const std::vector<uint64_t>& v, const uint64_t q);
+
 /*
  * Class: BitReader
  * ----------------
@@ -192,6 +196,9 @@ public:
 
     // Decode the i^th value in the sequence.
     uint64_t get(uint64_t i) const;
+
+    // Check if an element exists
+    bool contains(uint64_t val) const;
 
     // Number of integers encoded in this Sequence.
     uint64_t n_elem() const;
