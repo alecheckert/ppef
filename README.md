@@ -1,13 +1,23 @@
 # ppef: Partitioned Elias-Fano encoding
 
-Compact C++ implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615):
+Compact C++11/Python implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615).
 
-Notes:
+Our main interface is a `Sequence` object that provides a compressed in-memory representation of a nondecreasing sequence of unsigned integers. Following Ottoviano & Venturini, we divide this sequence into "blocks" that are each independently encoded with Elias-Fano, using adaptive high/low bit ratios. This partitioning scheme increases compression efficiency, but it also has a number of other benefits that we exploit here:
+ - $O(1)$ random access _without decompression_
+ - $O(n+m)$ intersections and unions _without decompression_
+ - $O(\log n)$ set membership tests _without decompression_
+ - Trivial $O(n)$ serialization and deserialization
+
+This makes the `Sequence` well-suited to storing inverted indices in search algorithms. All operations maintain sorting on the input sequence.
+
+Our implementation also has some other benefits:
  - No external C/C++ dependencies
- - Supports random access without decompression
- - Python bindings
+ - Thin Python bindings
  - Pickleable
- - Set-like operations - like intersections, unions, etc. - can be performed on the compressed representation (without decompression). Still working on these algorithms; stay tuned.
+
+Limitations include:
+ - No insert operation; requires full decompression
+ - Currently doesn't support mmap (this is a future improvement)
 
 ## Python example
 
@@ -15,7 +25,7 @@ Notes:
 import numpy as np
 from ppef import Sequence, deserialize
 
-# Simulate a bunch of random integers
+# Sample a sequence of integers
 values = np.random.randint(0, 1<<16, size=1<<22)
 values.sort()
 
@@ -26,15 +36,22 @@ seq = Sequence(values)
 seq.info()
 
 # Total number of compressed elements
-print(len(seq))
+n_elements = len(seq)
+assert n_elements == len(values)
 
 # Random access: get the i^th element without decompressing
-print(seq[5000])
+idx = 5000
+val: int = seq[idx]
+assert val == values[idx]
+
+# Set membership testing
+val_is_present = val in seq
+assert val_is_present
 
 # Decode the entire sequence
 values: list[int] = seq.decode()
 
-# Decode only one partition block
+# Decode only the 50th partition block
 chunk: list[int] = seq.decode_block(50)
 
 # Serialize to a file
@@ -48,6 +65,17 @@ serialized: bytes = seq.serialize()
 
 # Deserialize from a bytestring
 seq2: Sequence = deserialize(serialized)
+
+# Define another Sequence for testing intersections and unions
+values2 = np.random.randint(0, 1<<16, size=1<<22)
+values2.sort()
+seq2 = Sequence(values2)
+
+# Get the intersection between two Sequences
+new_seq: Sequence = seq & seq2
+
+# Get the union between two Sequences
+new_seq: Sequence = seq | seq2
 ```
 
 ## Building, testing
