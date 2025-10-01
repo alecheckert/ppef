@@ -2,50 +2,6 @@
 
 namespace ppef {
 
-// Show a number in binary.
-std::string to_binary(uint64_t x) {
-    std::string o;
-    for (size_t i = 0; i < 64ULL; ++i) {
-        if (x % 2 == 1) {
-            o.push_back('1');
-        } else {
-            o.push_back('0');
-        }
-        x >>= 1;
-    }
-    return o;
-}
-
-/*
- *  Function: supremum_index
- *  ------------------------
- *  Return the index of the element in a sorted vector *v* corresponding
- *  to the smallest value greater than or equal to *q*.
-*/
-size_t supremum_index(const std::vector<uint64_t>& v, const uint64_t q) {
-    if (v.size() == 0) {
-        throw std::runtime_error("supremum_index: v must be nonempty");
-    }
-    if (v.back() < q) {
-        throw std::runtime_error("supremum_index: q is larger than the largest element in v");
-    }
-    if (q <= v.front()) {
-        return 0;
-    }
-    size_t lo = 0,
-           hi = v.size() - 1,
-           mid;
-    while (lo + 1 < hi) {
-        mid = lo + (hi - lo) / 2;
-        if (q <= v[mid]) {
-            hi = mid;
-        } else {
-            lo = mid;
-        }
-    }
-    return hi;
-}
-
 inline uint32_t floor_log2_u64(uint64_t x) {
     // 63u: unsigned integer literal with value 63.
     // __builtin_clzll: GCC builtin that counts the number of leading
@@ -94,6 +50,32 @@ inline uint64_t next_one_at_or_after(
     // wi<<6: total bits in the previous words.
     // So overall this is the bit offset of the set bit.
     return (uint64_t)((wi << 6) + ctz64(w));
+}
+
+// Return the index of the element in a sorted vector *v* corresponding
+// to the smallest value greater than or equal to *q*.
+size_t supremum_index(const std::vector<uint64_t>& v, const uint64_t q) {
+    if (v.size() == 0) {
+        throw std::runtime_error("supremum_index: v must be nonempty");
+    }
+    if (v.back() < q) {
+        throw std::runtime_error("supremum_index: q is larger than the largest element in v");
+    }
+    if (q <= v.front()) {
+        return 0;
+    }
+    size_t lo = 0,
+           hi = v.size() - 1,
+           mid;
+    while (lo + 1 < hi) {
+        mid = lo + (hi - lo) / 2;
+        if (q <= v[mid]) {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    return hi;
 }
 
 BitReader::BitReader(const uint64_t* words, size_t n_words):
@@ -343,11 +325,11 @@ void EFBlock::show() const {
     std::cout << "  high.size():   " << high.size() << std::endl;
     std::cout << "Compressed low representation:\n";
     for(size_t i = 0; i < low.size(); ++i) {
-        std::cout << i << "\t" << std::setw(32) << low.at(i) << "\t" << to_binary(low.at(i)) << std::endl;
+        std::cout << i << "\t" << std::setw(32) << low.at(i) << std::endl;
     }
     std::cout << "Compressed high representation:\n";
     for(size_t i = 0; i < high.size(); ++i) {
-        std::cout << i << "\t" << std::setw(32) << high.at(i) << "\t" << to_binary(high.at(i)) << std::endl;
+        std::cout << i << "\t" << std::setw(32) << high.at(i) << std::endl;
     }
     const double compression_ratio = static_cast<double>(meta.n_elem) / (low.size() + high.size());
     std::cout << "Overall compression ratio: " << compression_ratio << std::endl;
