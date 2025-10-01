@@ -2,6 +2,8 @@
 
 Compact C++11 : Python implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615).
 
+Partly for fun (it's a neat method), partly because I needed a Python-facing implementation that was simple/hackable but still reasonably performant.
+
 The main interface is a `Sequence` object that provides a compressed in-memory representation of a nondecreasing sequence of unsigned integers. Following Ottoviano & Venturini, we divide this sequence into "blocks" that are each independently encoded with Elias-Fano using adaptive high/low bit ratios. This partitioning scheme increases compression efficiency: for large sets, we're usually able to get compression ratios of >=10-20X. Apart from that, the scheme has some other benefits that we exploit here:
  - $O(1)$ random access _without decompression_
  - $O(n+m)$ intersections and unions _without decompression_
