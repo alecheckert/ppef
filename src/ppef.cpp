@@ -13,6 +13,7 @@ inline uint32_t floor_log2_u64(uint64_t x) {
     //   zero bits in an unsigned long long (uint64_t). Undefined behavior
     //   when passed the number 0. __builtin_clzll(1) is 63.
     return 63u - (uint32_t)__builtin_clzll(x);
+#endif
 }
 
 inline uint64_t ceil_div_u64(uint64_t a, uint64_t b) {
