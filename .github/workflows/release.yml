@@ -17,7 +17,9 @@ jobs:
         include:
           - os: ubuntu-latest
           - os: macos-13 # intel
+            cibw_archs: x86_64
           - os: macos-14 # apple silicon
+            cibw_archs: arm64
           # - os: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +31,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.17.0
         env:
           CIBW_ARCHS_LINUX: auto64
-          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
           CIBW_SKIP: "pp* *-musllinux_* cp36-* cp37-* cp38-*"
           CIBW_TEST_COMMAND: 'pip install pytest numpy && pytest {project}/tests -s'
 
