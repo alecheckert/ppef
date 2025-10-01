@@ -7,7 +7,7 @@ import sys
 import tomli
 
 
-# Read __version__ from pyproject.toml
+# SSOT __version__ from pyproject.toml
 version = tomli.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"][
     "version"
 ]
