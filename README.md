@@ -2,13 +2,15 @@
 
 Compact C++11 : Python implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615).
 
-The main interface is a `Sequence` object that provides a compressed in-memory representation of a nondecreasing sequence of unsigned integers. Following Ottoviano & Venturini, we divide this sequence into "blocks" that are each independently encoded with Elias-Fano, using adaptive high/low bit ratios. This partitioning scheme increases compression efficiency: for large sets, we're usually able to get compression ratios of >=10-20X. This scheme has a number of other benefits that we exploit here:
+The main interface is a `Sequence` object that provides a compressed in-memory representation of a nondecreasing sequence of unsigned integers. Following Ottoviano & Venturini, we divide this sequence into "blocks" that are each independently encoded with Elias-Fano, using adaptive high/low bit ratios. This partitioning scheme increases compression efficiency: for large sets, we're usually able to get compression ratios of >=10-20X. Apart from that, the scheme has some other benefits that we exploit here:
  - $O(1)$ random access _without decompression_
  - $O(n+m)$ intersections and unions _without decompression_
  - $O(\log (n))$ set membership tests _without decompression_
  - Trivial $O(n)$ serialization and deserialization
 
-This makes the `Sequence` well-suited to storing large inverted indices in search algorithms. All operations maintain sorting on the input sequence.
+("Without decompression" above means without decompressing the entire `Sequence`. We still need to decompress individual partitions, but we can do all of the above while only holding a single decompressed partition in memory at a time.)
+
+These properties make the `Sequence` well-suited to storing large inverted indices in search algorithms. All operations maintain sorting on the input sequence.
 
 Our implementation also has some other benefits:
  - No external C/C++ dependencies
