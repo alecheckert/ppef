@@ -91,3 +91,7 @@ def test_union():
     seq2 = seq0 | seq1
     expected = set(seq0.decode()) | set(seq1.decode())
     assert set(seq2.decode()) == expected
+
+
+def test_version():
+    assert isinstance(ppef.__version__, str) and len(ppef.__version__) > 0
