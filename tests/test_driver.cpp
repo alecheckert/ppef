@@ -415,6 +415,20 @@ void test_sequence_intersect_right_side_empty() {
     assert (out2.block_size() == seq0.block_size());
 }
 
+void test_sequence_intersect_both_empty() {
+    std::vector<uint64_t> values0, values1;
+    Sequence seq0(values0), seq1(values1);
+    Sequence seq2 = seq0.intersect(seq1);
+    assert (seq2.n_elem() == 0);
+    assert (seq2.n_blocks() == 0);
+
+    const std::string serialized = seq2.serialize();
+    std::istringstream in(serialized);
+    Sequence seq3(in);
+    assert (seq3.n_elem() == 0);
+    assert (seq3.n_blocks() == 0);
+}
+
 void test_sequence_union() {
     const uint32_t block_size_0 = 5,
                    block_size_1 = 3;
@@ -488,6 +502,20 @@ void test_sequence_union_right_side_empty() {
     }
 }
 
+void test_sequence_union_both_empty() {
+    std::vector<uint64_t> values0, values1;
+    Sequence seq0(values0), seq1(values1);
+    Sequence seq2 = seq0 | seq1;
+    assert (seq2.n_elem() == 0);
+    assert (seq2.n_blocks() == 0);
+
+    const std::string serialized = seq2.serialize();
+    std::istringstream in(serialized);
+    Sequence seq3(in);
+    assert (seq3.n_elem() == 0);
+    assert (seq3.n_blocks() == 0);
+}
+
 void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
@@ -534,6 +562,9 @@ void test_driver() {
     std::cout << "test_sequence_intersect_right_side_empty\n";
     test_sequence_intersect_right_side_empty();
 
+    std::cout << "test_sequence_intersect_both_empty\n";
+    test_sequence_intersect_both_empty();
+
     std::cout << "test_sequence_union\n";
     test_sequence_union();
 
@@ -542,6 +573,9 @@ void test_driver() {
 
     std::cout << "test_sequence_union_right_side_empty\n";
     test_sequence_union_right_side_empty();
+
+    std::cout << "test_sequence_union_both_empty\n";
+    test_sequence_union_both_empty();
 }
 
 int main() {
