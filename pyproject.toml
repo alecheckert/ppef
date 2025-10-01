@@ -10,7 +10,6 @@ build-backend = "setuptools.build_meta"
 name = "ppef"
 version = "1.0.2"
 description = "Partitioned Elias-Fano encoding for sequences of nondecreasing integers"
-license = "MIT"
 license-files = ["LICENSE"]
 authors = [
     { name = "Alec Heckert", email = "alecheckert@gmail.com" },
