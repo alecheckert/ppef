@@ -5,7 +5,7 @@ Compact C++11/Python implementation of the partitioned Elias-Fano (PEF) encoding
 Our main interface is a `Sequence` object that provides a compressed in-memory representation of a nondecreasing sequence of unsigned integers. Following Ottoviano & Venturini, we divide this sequence into "blocks" that are each independently encoded with Elias-Fano, using adaptive high/low bit ratios. This partitioning scheme increases compression efficiency, but it also has a number of other benefits that we exploit here:
  - $O(1)$ random access _without decompression_
  - $O(n+m)$ intersections and unions _without decompression_
- - $O(\log n)$ set membership tests _without decompression_
+ - $O(\log (n))$ set membership tests _without decompression_
  - Trivial $O(n)$ serialization and deserialization
 
 This makes the `Sequence` well-suited to storing inverted indices in search algorithms. All operations maintain sorting on the input sequence.
@@ -54,6 +54,9 @@ values: list[int] = seq.decode()
 # Decode only the 50th partition block
 chunk: list[int] = seq.decode_block(50)
 
+# Total number of partition blocks
+print(seq.n_blocks)
+
 # Serialize to a file
 seq.save("myfile.ppef")
 
@@ -71,10 +74,10 @@ values2 = np.random.randint(0, 1<<16, size=1<<22)
 values2.sort()
 seq2 = Sequence(values2)
 
-# Get the intersection between two Sequences
+# Get the intersection between two Sequences (without decompressing)
 new_seq: Sequence = seq & seq2
 
-# Get the union between two Sequences
+# Get the union between two Sequences (without decompressing)
 new_seq: Sequence = seq | seq2
 ```
 
