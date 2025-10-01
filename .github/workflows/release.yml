@@ -1,0 +1,56 @@
+name: Build and Release Wheels
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v1.0.0
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.17.0
+        env:
+          CIBW_BUILD: "cp310-manylinux_x86_64 cp310-macosx_x86_64 cp310-macosx_arm64"
+          CIBW_TEST_COMMAND: 'pip install pytest && pytest {project}/tests'
+          # CIBW_ARCHS_WINDOWS: AMD64 # Example for specific architecture on Windows
+          # # Add any other cibuildwheel environment variables here
+
+      - name: Upload wheels as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibuildwheel-wheels
+          path: ./wheelhouse/*.whl
+
+  create_release:
+    name: Create GitHub Release
+    needs: build_wheels # block on build_wheels
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') # Only run on tag pushes
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: cibuildwheel-wheels
+          path: ./wheelhouse
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./wheelhouse/*.whl
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## Release Notes for ${{ github.ref_name }}
+
+            This release includes pre-built wheels for various platforms.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Required for authentication
