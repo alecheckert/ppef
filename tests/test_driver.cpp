@@ -415,6 +415,79 @@ void test_sequence_intersect_right_side_empty() {
     assert (out2.block_size() == seq0.block_size());
 }
 
+void test_sequence_union() {
+    const uint32_t block_size_0 = 5,
+                   block_size_1 = 3;
+    std::vector<uint64_t> values_0 {1,    3, 4,     6,    10,  11,  12,  13};
+    std::vector<uint64_t> values_1 {   2,    4,  5,    9,      11,          15};
+    Sequence seq0(values_0, block_size_0),
+             seq1(values_1, block_size_1);
+    Sequence out = seq0 | seq1;
+    assert (out.n_elem() == 12);
+    assert (out.n_blocks() == 3);
+    assert (out.block_size() == seq0.block_size());
+    for (const auto& v: values_0) {
+        assert (out.contains(v));
+    }
+    for (const auto& v: values_1) {
+        assert (out.contains(v));
+    }
+
+    // Check that all of the metadata is correct by serializing / deserializing
+    const std::string serialized = out.serialize();
+    std::istringstream in(serialized);
+    Sequence out2(in);
+    assert (out2.n_elem() == 12);
+    assert (out2.n_blocks() == 3);
+    assert (out2.block_size() == seq0.block_size());
+    for (const auto& v: values_0) {
+        assert (out.contains(v));
+    }
+    for (const auto& v: values_1) {
+        assert (out.contains(v));
+    }
+}
+
+void test_sequence_union_left_side_empty() {
+    std::vector<uint64_t> values_0 {};
+    std::vector<uint64_t> values_1 {2, 4, 5, 9, 11, 15};
+    Sequence seq0(values_0, 4),
+             seq1(values_1, 3);
+    Sequence out = seq0 | seq1;
+    assert (out.n_elem() == 6);
+    assert (out.n_blocks() == 2);
+
+    // Check that all of the metadata is correct by serializing / deserializing
+    const std::string serialized = out.serialize();
+    std::istringstream in(serialized);
+    Sequence out2(in);
+    assert (out2.n_elem() == 6);
+    assert (out2.n_blocks() == 2);
+    for (const auto& v: values_1) {
+        assert (out2.contains(v));
+    }
+}
+
+void test_sequence_union_right_side_empty() {
+    std::vector<uint64_t> values_0 {2, 4, 5, 9, 11, 15};
+    std::vector<uint64_t> values_1 {};
+    Sequence seq0(values_0, 4),
+             seq1(values_1, 3);
+    Sequence out = seq0 | seq1;
+    assert (out.n_elem() == 6);
+    assert (out.n_blocks() == 2);
+
+    // Check that all of the metadata is correct by serializing / deserializing
+    const std::string serialized = out.serialize();
+    std::istringstream in(serialized);
+    Sequence out2(in);
+    assert (out2.n_elem() == 6);
+    assert (out2.n_blocks() == 2);
+    for (const auto& v: values_0) {
+        assert (out2.contains(v));
+    }
+}
+
 void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
@@ -460,6 +533,15 @@ void test_driver() {
 
     std::cout << "test_sequence_intersect_right_side_empty\n";
     test_sequence_intersect_right_side_empty();
+
+    std::cout << "test_sequence_union\n";
+    test_sequence_union();
+
+    std::cout << "test_sequence_union_left_side_empty\n";
+    test_sequence_union_left_side_empty();
+
+    std::cout << "test_sequence_union_right_side_empty\n";
+    test_sequence_union_right_side_empty();
 }
 
 int main() {

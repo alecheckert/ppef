@@ -187,6 +187,12 @@ public:
     // Construct from a compressed PPEF file.
     explicit Sequence(const std::string& path);
 
+    // Copy constructor.
+    Sequence(const Sequence& other);
+
+    // Move constructor
+    Sequence(Sequence&&) noexcept;
+
     // Serialize this Sequence in its compressed state to a string.
     std::string serialize() const;
 
@@ -201,6 +207,7 @@ public:
 
     // Decode the i^th value in the sequence.
     uint64_t get(uint64_t i) const;
+    uint64_t operator[](uint64_t i) const;
 
     // Get the bi^th EFBlock in the sequence (without decoding).
     EFBlock get_efblock(uint64_t bi) const;
@@ -210,6 +217,9 @@ public:
 
     // Intersect with another Sequence, returning a new Sequence
     Sequence intersect(const Sequence& other) const;
+
+    // Take union with another Sequence, returning a new Sequence
+    Sequence operator|(const Sequence& other) const;
 
     // Number of integers encoded in this Sequence.
     uint64_t n_elem() const;
