@@ -8,8 +8,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ppef"
-version = "0.0.9"
+version = "1.0.0"
 description = "Partitioned Elias-Fano encoding for sequences of nondecreasing integers"
+license = { file = "LICENSE" }
 authors = [
     { name = "Alec Heckert", email = "alecheckert@gmail.com" },
 ]
