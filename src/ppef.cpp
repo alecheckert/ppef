@@ -699,9 +699,7 @@ std::vector<uint64_t> Sequence::decode() const {
 }
 
 Sequence Sequence::intersect(const Sequence& other) const {
-    const uint64_t n_blocks_0 = static_cast<uint64_t>(meta.n_blocks),
-                   n_blocks_1 = static_cast<uint64_t>(other.n_blocks()),
-                   block_size_0 = static_cast<uint64_t>(meta.block_size),
+    const uint64_t block_size_0 = static_cast<uint64_t>(meta.block_size),
                    block_size_1 = static_cast<uint64_t>(other.block_size());
     Sequence o(block_size_0);
     if (meta.n_elem == 0 || other.meta.n_elem == 0) {
@@ -737,9 +735,6 @@ Sequence Sequence::intersect(const Sequence& other) const {
             idx_in_block_0 = 0;
             // skip forward to the next relevant block, if we can
             while (block_idx_0 < meta.n_blocks && block_last_.at(block_idx_0) < val_1) {
-                std::cout
-                    << "skipping idx_0 from " << idx_0 << " to "
-                    << idx_0 + block_size_0 << "\n";
                 idx_0 += block_size_0;
                 block_idx_0 += 1;
             }
@@ -750,9 +745,6 @@ Sequence Sequence::intersect(const Sequence& other) const {
             idx_in_block_1 = 0;
             // skip forward to the next relevant block, if we can
             while (block_idx_1 < other.meta.n_blocks && other.block_last_.at(block_idx_1) < val_0) {
-                std::cout
-                    << "skipping idx_1 from " << idx_1 << " to "
-                    << idx_1 + block_size_1 << "\n";
                 idx_1 += block_size_1;
                 block_idx_1 += 1;
             }
@@ -830,9 +822,7 @@ Sequence Sequence::intersect(const Sequence& other) const {
 }
 
 Sequence Sequence::operator|(const Sequence& other) const {
-    const uint64_t n_blocks_0 = static_cast<uint64_t>(meta.n_blocks),
-                   n_blocks_1 = static_cast<uint64_t>(other.n_blocks()),
-                   block_size_0 = static_cast<uint64_t>(meta.block_size),
+    const uint64_t block_size_0 = static_cast<uint64_t>(meta.block_size),
                    block_size_1 = static_cast<uint64_t>(other.block_size());
 
     // Special cases: if either Sequence is empty, we just copy the existing
