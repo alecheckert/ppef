@@ -970,6 +970,25 @@ Sequence Sequence::operator-(const Sequence& other) const {
         }
     }
 
+    // If we've reached the end of the right Sequence but not the left
+    // one, then every remaining value in the left one goes into the difference
+    if (idx_1 == other.meta.n_elem) {
+        while (idx_0 < meta.n_elem) {
+            if (idx_in_block_0 == block_size_0) {
+                ++block_idx_0;
+                idx_in_block_0 = 0;
+                values_0 = decode_block(block_idx_0);
+            }
+            new_values.push_back(values_0.at(idx_in_block_0));
+            ++o.meta.n_elem;
+            if (new_values.size() == block_size_0) {
+                o._flush_block(new_values, cursor);
+            }
+            ++idx_0;
+            ++idx_in_block_0;
+        }
+    }
+
     // Flush the last block, if necessary
     if (new_values.size() > 0) {
         o._flush_block(new_values, cursor);

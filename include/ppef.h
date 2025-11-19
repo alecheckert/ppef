@@ -235,7 +235,9 @@ public:
     // Intersect with another Sequence, returning a new Sequence
     Sequence intersect(const Sequence& other) const;
 
-    // Set difference relative to *other*
+    // Set difference relative to *other*.
+    // For multisets, this should act like a multiset difference
+    // so that {1, 2, 2} - {1, 2} = {2}, but this has not been tested.
     Sequence operator-(const Sequence& other) const;
 
     // Take union with another Sequence, returning a new Sequence
