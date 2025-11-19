@@ -261,6 +261,12 @@ private:
         std::memcpy(payload_.data() + old, src, n);
     }
 
+    // Flush all values in a block to this Sequence.
+    void _flush_block(
+        std::vector<uint64_t>& values,
+        uint64_t& cursor
+    );
+
     // Serialize this Sequence to an arbitrary ofstream
     void serialize_to_stream(std::ostream&) const;
 
