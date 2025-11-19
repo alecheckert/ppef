@@ -571,11 +571,133 @@ void test_sequence_unique_case2() {
     };
     const Sequence seq(values, block_size);
     Sequence other = seq.unique();
-    other.info();
     assert (other.n_elem() == expected.size());
     assert (other.n_blocks() == 2);
     for (const auto& v: expected) {
         assert (other.contains(v));
+    }
+}
+
+void test_sequence_filter_by_count_case0() {
+    std::vector<uint64_t> values;
+    const Sequence seq(values);
+    Sequence other = seq.filter_by_count(0, 10);
+    assert (other.n_elem() == 0);
+    assert (other.n_blocks() == 0);
+}
+
+void test_sequence_filter_by_count_case1() {
+    const int min_count = 2;
+    const int max_count = 3;
+    const bool write_multiset = true;
+    std::vector<uint64_t> values{
+        1, 2, 2, 2, 3, 5, 5, 11, 101, 133, 144, 150, 150, 150, 150, 151, 151
+    };
+    std::vector<uint64_t> expected {
+        2, 2, 2, 5, 5, 151, 151
+    };
+    const Sequence seq(values);
+    Sequence other = seq.filter_by_count(min_count, max_count, write_multiset);
+    assert (other.n_elem() == expected.size());
+    const std::vector<uint64_t> seq_values = other.decode();
+    assert (seq_values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (seq_values.at(i) == expected.at(i));
+    }
+}
+
+void test_sequence_filter_by_count_case2() {
+    const int min_count = 4;
+    const int max_count = 10;
+    const bool write_multiset = true;
+    std::vector<uint64_t> values{
+        1, 2, 2, 2, 3, 5, 5, 11, 101, 133, 144, 150, 150, 150, 150, 151, 151
+    };
+    std::vector<uint64_t> expected {
+        150, 150, 150, 150
+    };
+    const Sequence seq(values);
+    Sequence other = seq.filter_by_count(min_count, max_count, write_multiset);
+    assert (other.n_elem() == expected.size());
+    const std::vector<uint64_t> seq_values = other.decode();
+    assert (seq_values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (seq_values.at(i) == expected.at(i));
+    }
+}
+
+void test_sequence_filter_by_count_case3() {
+    const int min_count = 0;
+    const int max_count = 10;
+    const bool write_multiset = true;
+    std::vector<uint64_t> values{
+        1, 2, 2, 2, 3, 5, 5, 11, 101, 133, 144, 150, 150, 150, 150, 151, 151
+    };
+    std::vector<uint64_t> expected = values;
+    const Sequence seq(values);
+    Sequence other = seq.filter_by_count(min_count, max_count, write_multiset);
+    assert (other.n_elem() == expected.size());
+    const std::vector<uint64_t> seq_values = other.decode();
+    assert (seq_values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (seq_values.at(i) == expected.at(i));
+    }
+}
+
+void test_sequence_filter_by_count_case4() {
+    const int min_count = 2;
+    const int max_count = 3;
+    const bool write_multiset = false;
+    std::vector<uint64_t> values{
+        1, 2, 2, 2, 3, 5, 5, 11, 101, 133, 144, 150, 150, 150, 150, 151, 151
+    };
+    std::vector<uint64_t> expected {
+        2, 5, 151
+    };
+    const Sequence seq(values);
+    Sequence other = seq.filter_by_count(min_count, max_count, write_multiset);
+    assert (other.n_elem() == expected.size());
+    const std::vector<uint64_t> seq_values = other.decode();
+    assert (seq_values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (seq_values.at(i) == expected.at(i));
+    }
+}
+
+void test_sequence_filter_by_count_case5() {
+    const int min_count = 4;
+    const int max_count = 10;
+    const bool write_multiset = false;
+    std::vector<uint64_t> values{
+        1, 2, 2, 2, 3, 5, 5, 11, 101, 133, 144, 150, 150, 150, 150, 151, 151
+    };
+    std::vector<uint64_t> expected { 150 };
+    const Sequence seq(values);
+    Sequence other = seq.filter_by_count(min_count, max_count, write_multiset);
+    assert (other.n_elem() == expected.size());
+    const std::vector<uint64_t> seq_values = other.decode();
+    assert (seq_values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (seq_values.at(i) == expected.at(i));
+    }
+}
+
+void test_sequence_filter_by_count_case6() {
+    const int min_count = 0;
+    const int max_count = 10;
+    const bool write_multiset = false;
+    std::vector<uint64_t> values{
+        1, 2, 2, 2, 3, 5, 5, 11, 101, 133, 144, 150, 150, 150, 150, 151, 151
+    };
+    std::vector<uint64_t> expected {
+        1, 2, 3, 5, 11, 101, 133, 144, 150, 151
+    };
+    const Sequence seq(values);
+    Sequence other = seq.filter_by_count(min_count, max_count, write_multiset);
+    const std::vector<uint64_t> seq_values = other.decode();
+    assert (seq_values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (seq_values.at(i) == expected.at(i));
     }
 }
 
@@ -651,6 +773,27 @@ void test_driver() {
 
     std::cout << "test_sequence_unique_case2\n";
     test_sequence_unique_case2();
+
+    std::cout << "test_sequence_filter_by_count_case0\n";
+    test_sequence_filter_by_count_case0();
+
+    std::cout << "test_sequence_filter_by_count_case1\n";
+    test_sequence_filter_by_count_case1();
+
+    std::cout << "test_sequence_filter_by_count_case2\n";
+    test_sequence_filter_by_count_case2();
+
+    std::cout << "test_sequence_filter_by_count_case3\n";
+    test_sequence_filter_by_count_case3();
+
+    std::cout << "test_sequence_filter_by_count_case4\n";
+    test_sequence_filter_by_count_case4();
+
+    std::cout << "test_sequence_filter_by_count_case5\n";
+    test_sequence_filter_by_count_case5();
+
+    std::cout << "test_sequence_filter_by_count_case6\n";
+    test_sequence_filter_by_count_case6();
 }
 
 int main() {

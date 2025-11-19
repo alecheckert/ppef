@@ -724,6 +724,66 @@ void Sequence::_flush_block(
     values.clear();
 }
 
+Sequence Sequence::filter_by_count(
+    const int min_count,
+    const int max_count,
+    const bool write_multiset
+) const {
+    Sequence o(meta.block_size);
+    if (meta.n_elem == 0) return o;
+    std::vector<uint64_t> ovalues;
+    uint64_t last = UINT64_MAX;
+    int count = 0;
+    uint64_t cursor = 0; // byte offset
+    for (uint64_t block_idx = 0; block_idx < meta.n_blocks; ++block_idx) {
+        std::vector<uint64_t> values = decode_block(block_idx);
+        for (const auto& v: values) {
+            if (v == last) {
+                ++count;
+                continue;
+            }
+            if (count >= min_count && count <= max_count && last != UINT64_MAX) {
+                if (write_multiset) {
+                    for (int i = 0; i < count; ++i) {
+                        ovalues.push_back(last);
+                        ++o.meta.n_elem;
+                        if (ovalues.size() == meta.block_size) o._flush_block(ovalues, cursor);
+                    }
+                } else {
+                    ovalues.push_back(last);
+                    ++o.meta.n_elem;
+                    if (ovalues.size() == meta.block_size) o._flush_block(ovalues, cursor);
+                }
+            }
+            last = v;
+            count = 1;
+        }
+    }
+
+    // Flush last value
+    if (count >= min_count && count <= max_count) {
+        if (write_multiset) {
+            for (int i = 0; i < count; ++i) {
+                ovalues.push_back(last);
+                ++o.meta.n_elem;
+                if (ovalues.size() == meta.block_size) o._flush_block(ovalues, cursor);
+            }
+        } else {
+            ovalues.push_back(last);
+            ++o.meta.n_elem;
+            if (ovalues.size() == meta.block_size) o._flush_block(ovalues, cursor);
+        }
+    }
+
+    // Flush last block if necessary
+    if (ovalues.size() > 0) o._flush_block(ovalues, cursor);
+
+    // Update payload offset for output files.
+    o.meta.payload_offset = sizeof(SequenceMetadata) + o.meta.n_blocks * sizeof(uint64_t) * 2;
+
+    return o;
+}
+
 Sequence Sequence::unique() const {
     Sequence o(meta.block_size);
     if (meta.n_elem == 0) return o;

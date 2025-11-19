@@ -223,11 +223,23 @@ public:
     // Check if an element exists
     bool contains(uint64_t val) const;
 
+    // Take all elements that occur between *min_count* and *max_count*
+    // times. If *write_multiset*, the multiplicity of each element is
+    // retained in the output; otherwise we only write each element once.
+    Sequence filter_by_count(
+        const int min_count,
+        const int max_count,
+        const bool write_multiset = true
+    ) const;
+
     // Intersect with another Sequence, returning a new Sequence
     Sequence intersect(const Sequence& other) const;
 
     // Take union with another Sequence, returning a new Sequence
     Sequence operator|(const Sequence& other) const;
+
+    // Set difference with another Sequence, returning a new Sequence
+    Sequence difference(const Sequence& other) const;
 
     // Number of integers encoded in this Sequence.
     uint64_t n_elem() const;
