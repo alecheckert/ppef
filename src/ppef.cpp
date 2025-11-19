@@ -943,6 +943,11 @@ Sequence Sequence::operator-(const Sequence& other) const {
         if (idx_in_block_1 == block_size_1) {
             ++block_idx_1;
             idx_in_block_1 = 0;
+            // skip forward to the next relevant block, if we can
+            while (block_idx_1 < other.meta.n_blocks && other.block_last_.at(block_idx_1) < val_0) {
+                idx_1 += block_size_1;
+                block_idx_1 += 1;
+            }
             values_1 = other.decode_block(block_idx_1);
         }
 
