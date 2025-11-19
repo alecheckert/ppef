@@ -701,6 +701,40 @@ void test_sequence_filter_by_count_case6() {
     }
 }
 
+void test_sequence_difference_case0() {
+    std::vector<uint64_t> values0 {
+        1, 3, 4, 5, 11, 17, 21, 30
+    };
+    std::vector<uint64_t> values1 {
+        2, 3, 5, 6, 7, 17, 25, 27, 30
+    };
+    std::vector<uint64_t> expected {
+        1, 4, 11, 21
+    };
+    const Sequence seq0(values0, 4);
+    const Sequence seq1(values1, 6);
+    const Sequence out = seq0 - seq1;
+    std::vector<uint64_t> values = out.decode();
+    assert (values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (values.at(i) == expected.at(i));
+    }
+
+    // Converse
+    const Sequence out2 = seq1 - seq0;
+    expected = {2, 6, 7, 25, 27};
+    values = out2.decode();
+    assert (values.size() == expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert (values.at(i) == expected.at(i));
+    }
+
+    // Self - Self
+    const Sequence out3 = out2 - out2;
+    assert (out3.n_elem() == 0);
+    assert (out3.n_blocks() == 0);
+}
+
 void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
@@ -794,6 +828,9 @@ void test_driver() {
 
     std::cout << "test_sequence_filter_by_count_case6\n";
     test_sequence_filter_by_count_case6();
+
+    std::cout << "test_sequence_difference_case0\n";
+    test_sequence_difference_case0();
 }
 
 int main() {

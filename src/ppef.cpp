@@ -903,6 +903,84 @@ Sequence Sequence::intersect(const Sequence& other) const {
     return o;
 }
 
+Sequence Sequence::operator-(const Sequence& other) const {
+    const uint64_t block_size_0 = static_cast<uint64_t>(meta.block_size),
+                   block_size_1 = static_cast<uint64_t>(other.block_size());
+    Sequence o(block_size_0);
+    if (meta.n_elem == 0 || other.meta.n_elem == 0) {
+        return o;
+    }
+
+    // Values in the current block to be compressed; flush at block_size_0
+    std::vector<uint64_t> new_values;
+
+    // Global index from 0 to n_elem
+    uint64_t idx_0 = 0,
+             idx_1 = 0,
+    // Corresponding values
+             val_0,
+             val_1,
+    // Index within the current block
+             idx_in_block_0 = 0,
+             idx_in_block_1 = 0,
+    // Current block indices
+             block_idx_0 = 0, 
+             block_idx_1 = 0,
+    // Byte offset within encoded payload
+             cursor = 0;
+
+    // Current values within each block
+    std::vector<uint64_t> values_0 = decode_block(block_idx_0),
+                          values_1 = other.decode_block(block_idx_1);
+
+    while (idx_0 < meta.n_elem && idx_1 < other.meta.n_elem) {
+        // Decode the next block(s) if necessary
+        if (idx_in_block_0 == block_size_0) {
+            ++block_idx_0;
+            idx_in_block_0 = 0;
+            values_0 = decode_block(block_idx_0);
+        }
+        if (idx_in_block_1 == block_size_1) {
+            ++block_idx_1;
+            idx_in_block_1 = 0;
+            values_1 = other.decode_block(block_idx_1);
+        }
+
+        // Get the values to compare
+        val_0 = values_0.at(idx_in_block_0);
+        val_1 = values_1.at(idx_in_block_1);
+
+        // Actually do the intersection and increment indices
+        if (val_0 == val_1) {
+            ++idx_0;
+            ++idx_in_block_0;
+            ++idx_1;
+            ++idx_in_block_1;
+        } else if (val_0 < val_1) {
+            new_values.push_back(val_0);
+            ++o.meta.n_elem;
+            if (new_values.size() == block_size_0) {
+                o._flush_block(new_values, cursor);
+            }
+            ++idx_0;
+            ++idx_in_block_0;
+        } else {
+            ++idx_1;
+            ++idx_in_block_1;
+        }
+    }
+
+    // Flush the last block, if necessary
+    if (new_values.size() > 0) {
+        o._flush_block(new_values, cursor);
+    }
+
+    // Update payload offset for output files.
+    o.meta.payload_offset = sizeof(SequenceMetadata) + o.meta.n_blocks * sizeof(uint64_t) * 2;
+
+    return o;
+}
+
 Sequence Sequence::operator|(const Sequence& other) const {
     const uint64_t block_size_0 = static_cast<uint64_t>(meta.block_size),
                    block_size_1 = static_cast<uint64_t>(other.block_size());

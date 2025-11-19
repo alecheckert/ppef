@@ -51,6 +51,14 @@ PYBIND11_MODULE(ppef, m) {
         .def("__len__", &ppef::Sequence::n_elem)
         .def("__and__", &ppef::Sequence::intersect, py::arg("other"))
         .def("__or__", &ppef::Sequence::operator|, py::arg("other"))
+        .def("__sub__", &ppef::Sequence::operator-, py::arg("other"))
+        .def(
+            "filter_by_count",
+            &ppef::Sequence::filter_by_count,
+            py::arg("min_count") = 0,
+            py::arg("max_count") = INT_MAX,
+            py::arg("write_multiset") = true
+        )
         .def(
             "serialize",
             [](const ppef::Sequence& s) {
