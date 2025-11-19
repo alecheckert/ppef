@@ -243,9 +243,6 @@ public:
     // Take union with another Sequence, returning a new Sequence
     Sequence operator|(const Sequence& other) const;
 
-    // Set difference with another Sequence, returning a new Sequence
-    Sequence difference(const Sequence& other) const;
-
     // Number of integers encoded in this Sequence.
     uint64_t n_elem() const;
 
