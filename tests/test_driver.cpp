@@ -540,6 +540,45 @@ void test_sequence_union_both_empty() {
     assert (seq3.n_blocks() == 0);
 }
 
+void test_sequence_unique_case0() {
+    std::vector<uint64_t> values;
+    const Sequence seq(values);
+    Sequence other = seq.unique();
+    assert (other.n_elem() == 0);
+    assert (other.n_blocks() == 0);
+}
+
+void test_sequence_unique_case1() {
+    std::vector<uint64_t> values{
+        1, 2, 3, 5, 11, 101, 133, 144, 150
+    };
+    const Sequence seq(values);
+    Sequence other = seq.unique();
+    assert (other.n_elem() == seq.n_elem());
+    assert (other.n_blocks() == seq.n_blocks());
+    for (const auto& v: values) {
+        assert (other.contains(v));
+    }
+}
+
+void test_sequence_unique_case2() {
+    const uint64_t block_size = 4;
+    std::vector<uint64_t> values{
+        1, 2, 2, 5, 11, 11, 11, 101, 133, 144, 144, 150
+    };
+    std::vector<uint64_t> expected{
+        1, 2, 5, 11, 101, 133, 144, 150
+    };
+    const Sequence seq(values, block_size);
+    Sequence other = seq.unique();
+    other.info();
+    assert (other.n_elem() == expected.size());
+    assert (other.n_blocks() == 2);
+    for (const auto& v: expected) {
+        assert (other.contains(v));
+    }
+}
+
 void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
@@ -603,6 +642,15 @@ void test_driver() {
 
     std::cout << "test_sequence_union_both_empty\n";
     test_sequence_union_both_empty();
+
+    std::cout << "test_sequence_unique_case0\n";
+    test_sequence_unique_case0();
+
+    std::cout << "test_sequence_unique_case1\n";
+    test_sequence_unique_case1();
+
+    std::cout << "test_sequence_unique_case2\n";
+    test_sequence_unique_case2();
 }
 
 int main() {

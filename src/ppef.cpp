@@ -698,6 +698,73 @@ std::vector<uint64_t> Sequence::decode() const {
     return o;
 }
 
+Sequence Sequence::unique() const {
+    Sequence o(meta.block_size);
+    if (meta.n_elem == 0) return o;
+    std::vector<uint64_t> ovalues;
+    uint64_t last = UINT64_MAX;
+    uint64_t cursor = 0; // byte offset
+    for (uint64_t block_idx = 0; block_idx < meta.n_blocks; ++block_idx) {
+        std::vector<uint64_t> values = decode_block(block_idx);
+        for (const auto& v: values) {
+            if (v == last) continue;
+            ovalues.push_back(v);
+            ++o.meta.n_elem;
+            last = v;
+            // flush
+            if (ovalues.size() == meta.block_size) {
+                EFBlock blk(ovalues.data(), ovalues.size());
+                o.block_offs_.push_back(cursor);
+                // Write the BlockHeader.
+                o.append_bytes(&blk.meta, sizeof(blk.meta));
+                cursor += sizeof(blk.meta);
+                // Write the low bit representation (u64)
+                if (!blk.low.empty()) {
+                    o.append_bytes(blk.low.data(), blk.low.size() * sizeof(uint64_t));
+                    cursor += blk.low.size() * sizeof(uint64_t);
+                }
+                // Write the high bit representation (u64)
+                if (!blk.high.empty()) {
+                    o.append_bytes(blk.high.data(), blk.high.size() * sizeof(uint64_t));
+                    cursor += blk.high.size() * sizeof(uint64_t);
+                }
+                // Update indices
+                o.block_last_.push_back(ovalues.back());
+                ++o.meta.n_blocks;
+                ovalues.clear();
+            }
+        }
+    }
+
+    // Flush last block if necessary.
+    if (ovalues.size() > 0) {
+        EFBlock blk(ovalues.data(), ovalues.size());
+        o.block_offs_.push_back(cursor);
+        // Write the BlockHeader.
+        o.append_bytes(&blk.meta, sizeof(blk.meta));
+        cursor += sizeof(blk.meta);
+        // Write the low bit representation (u64)
+        if (!blk.low.empty()) {
+            o.append_bytes(blk.low.data(), blk.low.size() * sizeof(uint64_t));
+            cursor += blk.low.size() * sizeof(uint64_t);
+        }
+        // Write the high bit representation (u64)
+        if (!blk.high.empty()) {
+            o.append_bytes(blk.high.data(), blk.high.size() * sizeof(uint64_t));
+            cursor += blk.high.size() * sizeof(uint64_t);
+        }
+        // Update indices
+        o.block_last_.push_back(ovalues.back());
+        ++o.meta.n_blocks;
+        ovalues.clear();
+    }
+
+    // Update payload offset for output files.
+    o.meta.payload_offset = sizeof(SequenceMetadata) + o.meta.n_blocks * sizeof(uint64_t) * 2;
+
+    return o;
+}
+
 Sequence Sequence::intersect(const Sequence& other) const {
     const uint64_t block_size_0 = static_cast<uint64_t>(meta.block_size),
                    block_size_1 = static_cast<uint64_t>(other.block_size());
