@@ -197,8 +197,8 @@ public:
     // Move constructor
     Sequence(Sequence&&) noexcept;
 
-    // Remove duplicate values, returning a new Sequence the unique nonredundant
-    // set of integers from this Sequence.
+    // Remove duplicate values, returning a new Sequence with the unique
+    // (nonredundant) set of integers from this Sequence.
     Sequence unique() const;
 
     // Serialize this Sequence in its compressed state to a string.
