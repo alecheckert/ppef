@@ -93,5 +93,38 @@ def test_union():
     assert set(seq2.decode()) == expected
 
 
+def test_difference():
+    values_0 = np.random.randint(0, 1 << 16, size=(1 << 16))
+    values_1 = np.random.randint(0, 1 << 16, size=(1 << 16))
+    values_0.sort()
+    values_1.sort()
+    seq0 = ppef.Sequence(values_0)
+    seq1 = ppef.Sequence(values_1)
+    seq0 = seq0.unique()
+    seq1 = seq1.unique()
+    seq2 = seq0 - seq1
+    expected = set(seq0.decode()) - set(seq1.decode())
+    assert set(seq2.decode()) == expected
+
+
+def test_filter_by_count():
+    size = 16
+    # size = 1 << 16
+    values = np.random.randint(0, size, size=size)
+    values.sort()
+    counts = np.bincount(values)
+    seq = ppef.Sequence(values)
+    min_count = 2
+    max_count = 3
+    seq = seq.filter_by_count(
+        min_count=min_count, max_count=max_count, write_multiset=True
+    )
+    counts = np.bincount(values)
+    expected = set(
+        v for v in values if counts[v] >= min_count and counts[v] <= max_count
+    )
+    assert set(seq.decode()) == set(expected)
+
+
 def test_version():
     assert isinstance(ppef.__version__, str) and len(ppef.__version__) > 0

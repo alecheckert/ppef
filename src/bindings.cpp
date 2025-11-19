@@ -45,11 +45,20 @@ PYBIND11_MODULE(ppef, m) {
         .def("save", &ppef::Sequence::save, py::arg("filepath"))
         .def("decode_block", &ppef::Sequence::decode_block, py::arg("block_idx"))
         .def("decode", &ppef::Sequence::decode)
+        .def("unique", &ppef::Sequence::unique)
         .def("__getitem__", &ppef::Sequence::get, py::arg("i"))
         .def("__contains__", &ppef::Sequence::contains, py::arg("q"))
         .def("__len__", &ppef::Sequence::n_elem)
         .def("__and__", &ppef::Sequence::intersect, py::arg("other"))
         .def("__or__", &ppef::Sequence::operator|, py::arg("other"))
+        .def("__sub__", &ppef::Sequence::operator-, py::arg("other"))
+        .def(
+            "filter_by_count",
+            &ppef::Sequence::filter_by_count,
+            py::arg("min_count") = 0,
+            py::arg("max_count") = INT_MAX,
+            py::arg("write_multiset") = true
+        )
         .def(
             "serialize",
             [](const ppef::Sequence& s) {

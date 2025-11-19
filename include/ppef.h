@@ -197,6 +197,10 @@ public:
     // Move constructor
     Sequence(Sequence&&) noexcept;
 
+    // Remove duplicate values, returning a new Sequence with the unique
+    // (nonredundant) set of integers from this Sequence.
+    Sequence unique() const;
+
     // Serialize this Sequence in its compressed state to a string.
     std::string serialize() const;
 
@@ -219,8 +223,22 @@ public:
     // Check if an element exists
     bool contains(uint64_t val) const;
 
+    // Take all elements that occur between *min_count* and *max_count*
+    // times. If *write_multiset*, the multiplicity of each element is
+    // retained in the output; otherwise we only write each element once.
+    Sequence filter_by_count(
+        const int min_count,
+        const int max_count,
+        const bool write_multiset = true
+    ) const;
+
     // Intersect with another Sequence, returning a new Sequence
     Sequence intersect(const Sequence& other) const;
+
+    // Set difference relative to *other*.
+    // For multisets, this is a multiset difference, so that
+    // so that {1, 2, 2, 3} - {1, 2} => {2, 3}.
+    Sequence operator-(const Sequence& other) const;
 
     // Take union with another Sequence, returning a new Sequence
     Sequence operator|(const Sequence& other) const;
@@ -256,6 +274,12 @@ private:
         payload_.resize(old + n);
         std::memcpy(payload_.data() + old, src, n);
     }
+
+    // Flush all values in a block to this Sequence.
+    void _flush_block(
+        std::vector<uint64_t>& values,
+        uint64_t& cursor
+    );
 
     // Serialize this Sequence to an arbitrary ofstream
     void serialize_to_stream(std::ostream&) const;
