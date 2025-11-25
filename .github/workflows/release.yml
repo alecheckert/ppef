@@ -16,9 +16,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-          - os: macos-13 # intel
+          - os: macos-15-intel # intel
             cibw_archs: x86_64
-          - os: macos-14 # apple silicon
+          - os: macos-latest # apple silicon
             cibw_archs: arm64
           # - os: windows-latest
     steps:
