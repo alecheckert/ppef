@@ -146,6 +146,21 @@ struct EFBlock {
 
     // Decode to the original sequence of integers.
     std::vector<uint64_t> decode() const;
+
+    // Serialize to stream, returning bytes written.
+    size_t serialize(std::ostream& o) const;
+
+    // Deserialize from stream.
+    EFBlock(std::istream& in);
+
+    // Serialize to bitstring.
+    std::string serialize() const;
+
+    // Deserialize from bitstring.
+    EFBlock(const std::string& encoded);
+
+    // Shared constructor logic. Returns bytes read.
+    size_t init_from_stream(std::istream& in);
 };
 
 /*

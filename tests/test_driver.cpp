@@ -757,6 +757,70 @@ void test_sequence_difference_case1() {
     }
 }
 
+void test_efblock_serialize_1elem() {
+    const size_t n = 1ULL;
+    std::vector<uint64_t> values = random_sorted_integers(n, 1<<16);
+    EFBlock blk(values.data(), values.size());
+    const std::string serialized = blk.serialize();
+    EFBlock recon(serialized);
+    assert (recon.meta.n_elem == blk.meta.n_elem);
+    assert (recon.meta.l == blk.meta.l);
+    assert (recon.meta.floor == blk.meta.floor);
+    assert (recon.meta.low_words == blk.meta.low_words);
+    assert (recon.meta.high_words == blk.meta.high_words);
+    assert (recon.meta.high_bits_len == blk.meta.high_bits_len);
+    assert (recon.low.size() == blk.low.size());
+    assert (recon.high.size() == blk.high.size());
+    const std::vector<uint64_t> recon_values = recon.decode();
+    assert (recon_values.size() == values.size());
+    for (size_t i = 0; i < recon_values.size(); ++i) {
+        assert (recon_values.at(i) == values.at(i));
+    }
+}
+
+void test_efblock_serialize() {
+    const size_t n = 177ULL;
+    std::vector<uint64_t> values = random_sorted_integers(n, 1<<16);
+    EFBlock blk(values.data(), values.size());
+    const std::string serialized = blk.serialize();
+    EFBlock recon(serialized);
+    assert (recon.meta.n_elem == blk.meta.n_elem);
+    assert (recon.meta.l == blk.meta.l);
+    assert (recon.meta.floor == blk.meta.floor);
+    assert (recon.meta.low_words == blk.meta.low_words);
+    assert (recon.meta.high_words == blk.meta.high_words);
+    assert (recon.meta.high_bits_len == blk.meta.high_bits_len);
+    assert (recon.low.size() == blk.low.size());
+    assert (recon.high.size() == blk.high.size());
+    const std::vector<uint64_t> recon_values = recon.decode();
+    assert (recon_values.size() == values.size());
+    for (size_t i = 0; i < recon_values.size(); ++i) {
+        assert (recon_values.at(i) == values.at(i));
+    }
+}
+
+void test_efblock_serialize_to_from_stream() {
+    const size_t n = 177ULL;
+    std::vector<uint64_t> values = random_sorted_integers(n, 1<<16);
+    EFBlock blk(values.data(), values.size());
+    const std::string serialized = blk.serialize();
+    std::istringstream in(serialized);
+    EFBlock recon(in);
+    assert (recon.meta.n_elem == blk.meta.n_elem);
+    assert (recon.meta.l == blk.meta.l);
+    assert (recon.meta.floor == blk.meta.floor);
+    assert (recon.meta.low_words == blk.meta.low_words);
+    assert (recon.meta.high_words == blk.meta.high_words);
+    assert (recon.meta.high_bits_len == blk.meta.high_bits_len);
+    assert (recon.low.size() == blk.low.size());
+    assert (recon.high.size() == blk.high.size());
+    const std::vector<uint64_t> recon_values = recon.decode();
+    assert (recon_values.size() == values.size());
+    for (size_t i = 0; i < recon_values.size(); ++i) {
+        assert (recon_values.at(i) == values.at(i));
+    }
+}
+
 void test_driver() {
     std::cout << "test_bit_writer_and_reader\n";
     test_bit_writer_and_reader();
@@ -856,6 +920,15 @@ void test_driver() {
 
     std::cout << "test_sequence_difference_case1\n";
     test_sequence_difference_case1();
+
+    std::cout << "test_efblock_serialize_1elem\n";
+    test_efblock_serialize_1elem();
+
+    std::cout << "test_efblock_serialize\n";
+    test_efblock_serialize();
+
+    std::cout << "test_efblock_serialize_to_from_stream\n";
+    test_efblock_serialize_to_from_stream();
 }
 
 int main() {

@@ -341,6 +341,91 @@ void EFBlock::show() const {
     std::cout << "Overall compression ratio: " << compression_ratio << std::endl;
 }
 
+// Serialize as [header, low, high]
+size_t EFBlock::serialize(std::ostream& o) const {
+    if (!o) {
+        throw std::runtime_error("EFBlock::serialize: stream not writable");
+    }
+    size_t size = 0ULL;
+    o.write(
+        reinterpret_cast<const char*>(&meta),
+        sizeof(meta)
+    );
+    size += sizeof(meta);
+    if (!o) {
+        throw std::runtime_error("EFBlock::serialize: failed to write header");
+    }
+    o.write(
+        reinterpret_cast<const char*>(low.data()),
+        low.size() * sizeof(uint64_t)
+    );
+    size += low.size() * sizeof(uint64_t);
+    if (!o) {
+        throw std::runtime_error("EFBlock::serialize: failed to write low bits");
+    }
+    o.write(
+        reinterpret_cast<const char*>(high.data()),
+        high.size() * sizeof(uint64_t)
+    );
+    size += high.size() * sizeof(uint64_t);
+    if (!o) {
+        throw std::runtime_error("EFBlock::serialize: failed to write high bits");
+    }
+    return size;
+}
+
+std::string EFBlock::serialize() const {
+    std::ostringstream o;
+    serialize(o);
+    return o.str();
+}
+
+size_t EFBlock::init_from_stream(std::istream& in) {
+    if (!in) {
+        throw std::runtime_error("EFBlock::init_from_stream: input stream not readable");
+    }
+    size_t size = 0ULL;
+    in.read(
+        reinterpret_cast<char*>(&meta),
+        sizeof(meta)
+    );
+    size += sizeof(meta);
+    if (!in) {
+        throw std::runtime_error("EFBlock::init_from_stream: failed to read header");
+    }
+    low = std::vector<uint64_t>(meta.low_words);
+    in.read(
+        reinterpret_cast<char*>(low.data()),
+        meta.low_words * sizeof(uint64_t)
+    );
+    size += meta.low_words * sizeof(uint64_t);
+    if (!in) {
+        throw std::runtime_error("EFBlock::init_from_stream: failed to read low bits");
+    }
+    high = std::vector<uint64_t>(meta.high_words);
+    in.read(
+        reinterpret_cast<char*>(high.data()),
+        meta.high_words * sizeof(uint64_t)
+    );
+    size += meta.high_words * sizeof(uint64_t);
+    if (!in) {
+        throw std::runtime_error("EFBlock::init_from_stream: failed to read high bits");
+    }
+    return size;
+}
+
+EFBlock::EFBlock(const std::string& serialized) {
+    if (serialized.size() < sizeof(meta)) {
+        throw std::runtime_error("string too short to encode EFBlock");
+    }
+    std::istringstream in(serialized);
+    init_from_stream(in);
+}
+
+EFBlock::EFBlock(std::istream& in) {
+    init_from_stream(in);
+}
+
 Sequence::Sequence(uint32_t block_size):
     block_last_(0),
     block_offs_(0),
