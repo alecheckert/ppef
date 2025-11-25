@@ -146,6 +146,12 @@ struct EFBlock {
 
     // Decode to the original sequence of integers.
     std::vector<uint64_t> decode() const;
+
+    // Encode in bitstring
+    std::string serialize() const;
+
+    // Decode from bitstring
+    EFBlock(const std::string& encoded);
 };
 
 /*

@@ -341,6 +341,56 @@ void EFBlock::show() const {
     std::cout << "Overall compression ratio: " << compression_ratio << std::endl;
 }
 
+// Serialize as [header, low, high]
+std::string EFBlock::serialize() const {
+    const size_t size = sizeof(meta)
+        + (low.size() + high.size()) * sizeof(uint64_t);
+    std::string o(size, '\0');
+    std::memcpy(
+        &o[0],
+        &meta,
+        sizeof(meta)
+    );
+    std::memcpy(
+        &o[0] + sizeof(meta),
+        low.data(),
+        low.size() * sizeof(uint64_t)
+    );
+    std::memcpy(
+        &o[0] + sizeof(meta) + low.size() * sizeof(uint64_t),
+        high.data(),
+        high.size() * sizeof(uint64_t)
+    );
+    return o;
+}
+
+EFBlock::EFBlock(const std::string& serialized) {
+    if (serialized.size() < sizeof(meta)) {
+        throw std::runtime_error("string too short to encode EFBlock");
+    }
+
+    // Read the header.
+    std::memcpy(&meta, serialized.data(), sizeof(meta));
+
+    // Read the low bits.
+    low.resize(meta.low_words);
+    const uint64_t* loww = reinterpret_cast<const uint64_t*>(serialized.data() + sizeof(meta));
+    std::memcpy(
+        low.data(),
+        loww,
+        sizeof(uint64_t) * meta.low_words
+    );
+
+    // Read the high bits.
+    high.resize(meta.high_words);
+    const uint64_t* highw = loww + meta.low_words;
+    std::memcpy(
+        high.data(),
+        highw,
+        sizeof(uint64_t) * meta.high_words
+    );
+}
+
 Sequence::Sequence(uint32_t block_size):
     block_last_(0),
     block_offs_(0),
