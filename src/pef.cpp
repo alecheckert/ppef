@@ -1,6 +1,6 @@
-#include "ppef.h"
+#include "pef.h"
 
-namespace ppef {
+namespace pef {
 
 inline uint32_t floor_log2_u64(uint64_t x) {
 #if defined(_MSC_VER) && !defined(__clang__)
@@ -1217,4 +1217,4 @@ uint64_t Sequence::n_blocks() const {
     return meta.n_blocks;
 }
 
-} // end namespace ppef
+} // end namespace pef

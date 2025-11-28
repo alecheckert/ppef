@@ -19,7 +19,7 @@ CXX_STD = 17  # can also be >=c++11
 
 ext_modules = [
     Pybind11Extension(
-        "ppef",
+        "pef",
         SRC_FILES,
         include_dirs=INCLUDE_DIRS,
         cxx_std=CXX_STD,

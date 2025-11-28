@@ -3,11 +3,11 @@
 #include <random>
 #include <cassert>
 #include <cstdio>
-#include "ppef.h"
+#include "pef.h"
 
 static std::random_device rd;
 
-using namespace ppef;
+using namespace pef;
 
 // Generate a vector of *n* random integers between 0 and *max_value*
 // (noninclusive).
@@ -326,7 +326,7 @@ void test_pef_construct_from_file() {
     assert(std::is_sorted(values.begin(), values.end()));
     assert(values.size() == n);
 
-    NamedTemporaryFile file("_test_file.ppef");
+    NamedTemporaryFile file("_test_file.pef");
     Sequence pef(values, block_size);
     pef.save(file.path);
 

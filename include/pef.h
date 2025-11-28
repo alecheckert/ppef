@@ -1,5 +1,5 @@
 #pragma once
-/* ppef - Partitioned Elias-Fano encoding of a sequence of integers. */
+/* pef - Partitioned Elias-Fano encoding of a sequence of integers. */
 
 #include <algorithm>
 #include <chrono>
@@ -19,7 +19,7 @@
   #include <intrin.h>
 #endif
 
-namespace ppef {
+namespace pef {
 
 // floor(log2(x))
 inline uint32_t floor_log2_u64(uint64_t x);
@@ -303,4 +303,4 @@ private:
     void init_from_stream(std::istream& in);
 };
 
-} // end namespace ppef
+} // end namespace pef

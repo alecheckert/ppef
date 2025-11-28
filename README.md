@@ -1,4 +1,4 @@
-# ppef: Partitioned Elias-Fano encoding
+# pypef: Partitioned Elias-Fano encoding with Python bindings
 
 Compact C++11 : Python implementation of the partitioned Elias-Fano (PEF) encoding from Ottoviano & Venturini (https://doi.org/10.1145/2600428.2609615).
 
@@ -27,7 +27,7 @@ Limitations include:
 
 ```
 import numpy as np
-from ppef import Sequence, deserialize
+from pef import Sequence, deserialize
 
 # Sample a sequence of integers. These are uniformly distributed, which is
 # a worst-case situation for Elias-Fano encoding.
@@ -63,10 +63,10 @@ chunk: list[int] = seq.decode_block(50)
 print(seq.n_blocks)
 
 # Serialize to a file
-seq.save("myfile.ppef")
+seq.save("myfile.pef")
 
 # Deserialize from a file
-seq2 = Sequence("myfile.ppef")
+seq2 = Sequence("myfile.pef")
 
 # Serialize to a bytestring
 serialized: bytes = seq.serialize()

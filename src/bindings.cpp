@@ -1,19 +1,19 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
-#include "ppef.h"
+#include "pef.h"
 
 namespace py = pybind11;
 
-ppef::Sequence deserialize(const std::string& s) {
+pef::Sequence deserialize(const std::string& s) {
     std::istringstream in(s);
-    return ppef::Sequence(in);
+    return pef::Sequence(in);
 }
 
-PYBIND11_MODULE(ppef, m) {
+PYBIND11_MODULE(pef, m) {
     m.attr("__version__") = VERSION_INFO; // see setup.py
-    py::class_<ppef::SequenceMetadata>(m, "SequenceMetadata", py::module_local());
-    py::class_<ppef::Sequence>(m, "Sequence", py::module_local())
+    py::class_<pef::SequenceMetadata>(m, "SequenceMetadata", py::module_local());
+    py::class_<pef::Sequence>(m, "Sequence", py::module_local())
         .def(
             py::init<const std::string&>(),
             py::arg("filepath")
@@ -26,42 +26,42 @@ PYBIND11_MODULE(ppef, m) {
         .def(
             py::pickle(
                 // __getstate__
-                [](const ppef::Sequence& s) {
+                [](const pef::Sequence& s) {
                     std::string o = s.serialize();
                     return py::bytes(o.data(), o.size());
                 },
                 // __setstate__
                 [](const py::bytes& b) {
                     std::istringstream in(b);
-                    return ppef::Sequence(in);
+                    return pef::Sequence(in);
                 }
             )
         )
-        .def_property_readonly("n_elem", &ppef::Sequence::n_elem)
-        .def_property_readonly("block_size", &ppef::Sequence::block_size)
-        .def_property_readonly("n_blocks", &ppef::Sequence::n_blocks)
-        .def("get_meta", &ppef::Sequence::get_meta)
-        .def("info", &ppef::Sequence::info)
-        .def("save", &ppef::Sequence::save, py::arg("filepath"))
-        .def("decode_block", &ppef::Sequence::decode_block, py::arg("block_idx"))
-        .def("decode", &ppef::Sequence::decode)
-        .def("unique", &ppef::Sequence::unique)
-        .def("__getitem__", &ppef::Sequence::get, py::arg("i"))
-        .def("__contains__", &ppef::Sequence::contains, py::arg("q"))
-        .def("__len__", &ppef::Sequence::n_elem)
-        .def("__and__", &ppef::Sequence::intersect, py::arg("other"))
-        .def("__or__", &ppef::Sequence::operator|, py::arg("other"))
-        .def("__sub__", &ppef::Sequence::operator-, py::arg("other"))
+        .def_property_readonly("n_elem", &pef::Sequence::n_elem)
+        .def_property_readonly("block_size", &pef::Sequence::block_size)
+        .def_property_readonly("n_blocks", &pef::Sequence::n_blocks)
+        .def("get_meta", &pef::Sequence::get_meta)
+        .def("info", &pef::Sequence::info)
+        .def("save", &pef::Sequence::save, py::arg("filepath"))
+        .def("decode_block", &pef::Sequence::decode_block, py::arg("block_idx"))
+        .def("decode", &pef::Sequence::decode)
+        .def("unique", &pef::Sequence::unique)
+        .def("__getitem__", &pef::Sequence::get, py::arg("i"))
+        .def("__contains__", &pef::Sequence::contains, py::arg("q"))
+        .def("__len__", &pef::Sequence::n_elem)
+        .def("__and__", &pef::Sequence::intersect, py::arg("other"))
+        .def("__or__", &pef::Sequence::operator|, py::arg("other"))
+        .def("__sub__", &pef::Sequence::operator-, py::arg("other"))
         .def(
             "filter_by_count",
-            &ppef::Sequence::filter_by_count,
+            &pef::Sequence::filter_by_count,
             py::arg("min_count") = 0,
             py::arg("max_count") = INT_MAX,
             py::arg("write_multiset") = true
         )
         .def(
             "serialize",
-            [](const ppef::Sequence& s) {
+            [](const pef::Sequence& s) {
                 std::string o = s.serialize();
                 return py::bytes(o.data(), o.size());
             }

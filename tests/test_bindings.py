@@ -1,4 +1,4 @@
-import ppef
+import pef
 import pickle
 import numpy as np
 import multiprocessing as mp
@@ -11,7 +11,7 @@ def test_pef():
     block_size = 1 << 7
     values = np.random.randint(0, max_value, size=n_elem)
     values.sort()
-    seq = ppef.Sequence(values, block_size=block_size)
+    seq = pef.Sequence(values, block_size=block_size)
     assert seq.n_elem == n_elem
     assert seq.block_size == block_size
 
@@ -28,9 +28,9 @@ def test_pef():
     _ = seq.n_blocks
 
     # test serialization to a file
-    tmp = NamedTemporaryFile(suffix=".ppef")
+    tmp = NamedTemporaryFile(suffix=".pef")
     seq.save(tmp.name)
-    seq2 = ppef.Sequence(tmp.name)
+    seq2 = pef.Sequence(tmp.name)
     recon = seq2.decode()
     assert (np.array(recon) == values).all()
 
@@ -41,10 +41,10 @@ def test_serialization():
     block_size = 1 << 7
     values = np.random.randint(0, max_value, size=n_elem)
     values.sort()
-    seq = ppef.Sequence(values)
+    seq = pef.Sequence(values)
     serialized = seq.serialize()
     print(len(serialized))
-    seq2 = ppef.deserialize(serialized)
+    seq2 = pef.deserialize(serialized)
     assert (np.array(seq.decode()) == values).all()
 
 
@@ -54,7 +54,7 @@ def test_pickling():
     block_size = 1 << 7
     values = np.random.randint(0, max_value, size=n_elem)
     values.sort()
-    seq = ppef.Sequence(values, block_size=block_size)
+    seq = pef.Sequence(values, block_size=block_size)
     serialized = pickle.dumps(seq)
     seq2 = pickle.loads(serialized)
     assert (np.array(seq2.decode()) == values).all()
@@ -62,10 +62,10 @@ def test_pickling():
 
 def test_empty():
     """Stability test."""
-    seq = ppef.Sequence([])
+    seq = pef.Sequence([])
     assert seq.n_elem == 0
     serialized = seq.serialize()
-    seq2 = ppef.deserialize(serialized)
+    seq2 = pef.deserialize(serialized)
     assert seq2.n_elem == 0
 
 
@@ -74,8 +74,8 @@ def test_intersect():
     values_1 = np.random.randint(0, 1 << 16, size=(1 << 16))
     values_0.sort()
     values_1.sort()
-    seq0 = ppef.Sequence(values_0)
-    seq1 = ppef.Sequence(values_1)
+    seq0 = pef.Sequence(values_0)
+    seq1 = pef.Sequence(values_1)
     seq2 = seq0 & seq1
     expected = set(seq0.decode()) & set(seq1.decode())
     assert set(seq2.decode()) == expected
@@ -86,8 +86,8 @@ def test_union():
     values_1 = np.random.randint(0, 1 << 16, size=(1 << 16))
     values_0.sort()
     values_1.sort()
-    seq0 = ppef.Sequence(values_0)
-    seq1 = ppef.Sequence(values_1)
+    seq0 = pef.Sequence(values_0)
+    seq1 = pef.Sequence(values_1)
     seq2 = seq0 | seq1
     expected = set(seq0.decode()) | set(seq1.decode())
     assert set(seq2.decode()) == expected
@@ -98,8 +98,8 @@ def test_difference():
     values_1 = np.random.randint(0, 1 << 16, size=(1 << 16))
     values_0.sort()
     values_1.sort()
-    seq0 = ppef.Sequence(values_0)
-    seq1 = ppef.Sequence(values_1)
+    seq0 = pef.Sequence(values_0)
+    seq1 = pef.Sequence(values_1)
     seq0 = seq0.unique()
     seq1 = seq1.unique()
     seq2 = seq0 - seq1
@@ -113,7 +113,7 @@ def test_filter_by_count():
     values = np.random.randint(0, size, size=size)
     values.sort()
     counts = np.bincount(values)
-    seq = ppef.Sequence(values)
+    seq = pef.Sequence(values)
     min_count = 2
     max_count = 3
     seq = seq.filter_by_count(
@@ -127,4 +127,4 @@ def test_filter_by_count():
 
 
 def test_version():
-    assert isinstance(ppef.__version__, str) and len(ppef.__version__) > 0
+    assert isinstance(pef.__version__, str) and len(pef.__version__) > 0
